@@ -33,10 +33,10 @@ export default function SettingsPanel() {
 
   useEffect(() => {
     const stored = localStorage.getItem("theme");
-    if (stored === "dark" || stored === "light") {
-      setTheme(stored);
-      applyTheme(stored);
-    }
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const initial = stored === "dark" || stored === "light" ? stored : prefersDark ? "dark" : "light";
+    setTheme(initial);
+    applyTheme(initial);
   }, []);
 
   useEffect(() => {
@@ -102,21 +102,21 @@ export default function SettingsPanel() {
 
   if (loading || !device) {
     return (
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm text-sm text-zinc-600">
+      <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
         Loading settings…
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-zinc-900">Settings</h2>
-        <span className="text-xs text-zinc-500">Device: {device.deviceId}</span>
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Settings</h2>
+        <span className="text-xs text-zinc-500 dark:text-zinc-400">Device: {device.deviceId}</span>
       </div>
 
       <div className="space-y-3">
-        <label className="flex items-center justify-between gap-3 text-sm text-zinc-800">
+        <label className="flex items-center justify-between gap-3 text-sm text-zinc-800 dark:text-zinc-100">
           <span>Show last updated (default on)</span>
           <input
             type="checkbox"
@@ -125,7 +125,7 @@ export default function SettingsPanel() {
             onChange={(e) => setDevice({ ...device, showLastUpdated: e.target.checked })}
           />
         </label>
-        <label className="flex items-center justify-between gap-3 text-sm text-zinc-800">
+        <label className="flex items-center justify-between gap-3 text-sm text-zinc-800 dark:text-zinc-100">
           <span>Show status source (default off)</span>
           <input
             type="checkbox"
@@ -134,7 +134,7 @@ export default function SettingsPanel() {
             onChange={(e) => setDevice({ ...device, showStatusSource: e.target.checked })}
           />
         </label>
-        <div className="flex items-center justify-between gap-3 text-sm text-zinc-800">
+        <div className="flex items-center justify-between gap-3 text-sm text-zinc-800 dark:text-zinc-100">
           <span>Theme</span>
           <div className="flex gap-2">
             <button
@@ -157,12 +157,12 @@ export default function SettingsPanel() {
             </button>
           </div>
         </div>
-        <label className="flex items-center justify-between gap-3 text-sm text-zinc-800">
+        <label className="flex items-center justify-between gap-3 text-sm text-zinc-800 dark:text-zinc-100">
           <span>Timezone</span>
           <select
             value={device.timezone ?? ""}
             onChange={(e) => setDevice({ ...device, timezone: e.target.value })}
-            className="w-48 rounded-md border border-zinc-200 px-2 py-1 text-sm"
+            className="w-48 rounded-md border border-zinc-200 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
           >
             {(device.timezone ? [device.timezone] : []).concat(timezones).filter((v, i, arr) => arr.indexOf(v) === i).map((tz) => (
               <option key={tz} value={tz}>
@@ -171,12 +171,12 @@ export default function SettingsPanel() {
             ))}
           </select>
         </label>
-        <label className="flex items-center justify-between gap-3 text-sm text-zinc-800">
+        <label className="flex items-center justify-between gap-3 text-sm text-zinc-800 dark:text-zinc-100">
           <span>Time format</span>
           <select
             value={device.timeFormat ?? "24h"}
             onChange={(e) => setDevice({ ...device, timeFormat: e.target.value })}
-            className="w-32 rounded-md border border-zinc-200 px-2 py-1 text-sm"
+            className="w-32 rounded-md border border-zinc-200 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
           >
             {timeFormats.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -185,12 +185,12 @@ export default function SettingsPanel() {
             ))}
           </select>
         </label>
-        <label className="flex items-center justify-between gap-3 text-sm text-zinc-800">
+        <label className="flex items-center justify-between gap-3 text-sm text-zinc-800 dark:text-zinc-100">
           <span>Date format</span>
           <select
             value={device.dateFormat ?? "MDY"}
             onChange={(e) => setDevice({ ...device, dateFormat: e.target.value })}
-            className="w-32 rounded-md border border-zinc-200 px-2 py-1 text-sm"
+            className="w-32 rounded-md border border-zinc-200 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
           >
             {dateFormats.map((opt) => (
               <option key={opt.value} value={opt.value}>
