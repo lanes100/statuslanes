@@ -100,8 +100,15 @@ export default function DeviceDashboard() {
     if (!device) return;
     setSyncing(true);
     try {
-      await apiFetch("/api/sync-trmnl", { method: "POST", body: JSON.stringify({ deviceId: device.deviceId }) });
-      addToast({ message: "Synced labels from TRMNL", type: "success" });
+      const res = await apiFetch<{ device: Device; labelsResolved?: number }>("/api/sync-trmnl", {
+        method: "POST",
+        body: JSON.stringify({ deviceId: device.deviceId }),
+      });
+      const resolved = res.labelsResolved ?? 0;
+      addToast({
+        message: resolved > 0 ? `Synced ${resolved} labels from TRMNL` : "No labels found in TRMNL merge variables",
+        type: resolved > 0 ? "success" : "info",
+      });
       await fetchDevices();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to sync from TRMNL";

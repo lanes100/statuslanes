@@ -87,7 +87,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Server config error: ${msg}` }, { status: 500 });
     }
 
-    const overlaidStatuses = await fetchTrmnlStatuses(resolvedWebhookUrl);
+    const fetched = await fetchTrmnlStatuses(resolvedWebhookUrl);
 
     await adminDb
       .collection("devices")
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
         deviceName,
         pluginId: pluginId ?? extractPluginId(resolvedWebhookUrl),
         webhookUrlEncrypted: encryptedWebhook,
-        statuses: overlaidStatuses ?? defaultStatuses,
+        statuses: fetched?.statuses ?? defaultStatuses,
         activeStatusKey: null,
         activeStatusLabel: null,
         createdAt: now,
@@ -116,7 +116,9 @@ export async function POST(request: Request) {
   }
 }
 
-async function fetchTrmnlStatuses(webhookUrl: string) {
+type TrmnlStatusResult = { statuses: typeof defaultStatuses; resolvedCount: number };
+
+async function fetchTrmnlStatuses(webhookUrl: string): Promise<TrmnlStatusResult | null> {
   try {
     const res = await fetch(webhookUrl, { method: "GET" });
     if (!res.ok) return null;
@@ -125,14 +127,18 @@ async function fetchTrmnlStatuses(webhookUrl: string) {
       typeof json === "object" && json && "merge_variables" in json ? (json as Record<string, unknown>).merge_variables : undefined;
     if (!mv || typeof mv !== "object") return null;
 
+    let resolvedCount = 0;
     const statuses = defaultStatuses.map((s) => {
       const label = (mv as Record<string, unknown>)[`status_${s.key}_label`];
+      const nextLabel =
+        typeof label === "string" && label.trim().length > 0 ? label.trim().slice(0, 60) : s.label;
+      if (nextLabel !== s.label) resolvedCount += 1;
       return {
         ...s,
-        label: typeof label === "string" && label.trim().length > 0 ? label.trim().slice(0, 60) : s.label,
+        label: nextLabel,
       };
     });
-    return statuses;
+    return { statuses, resolvedCount };
   } catch {
     return null;
   }

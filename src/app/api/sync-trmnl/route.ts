@@ -19,7 +19,9 @@ async function requireUser() {
   return { uid: decoded.uid };
 }
 
-async function fetchTrmnlStatuses(webhookUrl: string) {
+type TrmnlStatusResult = { statuses: typeof defaultStatuses; resolvedCount: number };
+
+async function fetchTrmnlStatuses(webhookUrl: string): Promise<TrmnlStatusResult> {
   const res = await fetch(webhookUrl, { method: "GET" });
   if (!res.ok) {
     const body = await res.text();
@@ -31,14 +33,19 @@ async function fetchTrmnlStatuses(webhookUrl: string) {
   if (!mv || typeof mv !== "object") {
     throw new Error("No merge_variables found");
   }
+
+  let resolvedCount = 0;
   const statuses = defaultStatuses.map((s) => {
     const label = (mv as Record<string, unknown>)[`status_${s.key}_label`];
+    const nextLabel =
+      typeof label === "string" && label.trim().length > 0 ? label.trim().slice(0, 60) : s.label;
+    if (nextLabel !== s.label) resolvedCount += 1;
     return {
       ...s,
-      label: typeof label === "string" && label.trim().length > 0 ? label.trim().slice(0, 60) : s.label,
+      label: nextLabel,
     };
   });
-  return statuses;
+  return { statuses, resolvedCount };
 }
 
 export async function POST(request: Request) {
@@ -57,11 +64,11 @@ export async function POST(request: Request) {
     if (!encrypted) return NextResponse.json({ error: "No webhook stored" }, { status: 500 });
     const webhookUrl = decrypt(encrypted);
 
-    const statuses = await fetchTrmnlStatuses(webhookUrl);
+    const { statuses, resolvedCount } = await fetchTrmnlStatuses(webhookUrl);
 
     await ref.update({ statuses, updatedAt: Date.now() });
     const refreshed = await ref.get();
-    return NextResponse.json({ device: refreshed.data() }, { status: 200 });
+    return NextResponse.json({ device: refreshed.data(), labelsResolved: resolvedCount }, { status: 200 });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "UNAUTHENTICATED") {
       return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
