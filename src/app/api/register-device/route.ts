@@ -87,6 +87,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Server config error: ${msg}` }, { status: 500 });
     }
 
+    const overlaidStatuses = await fetchTrmnlStatuses(resolvedWebhookUrl);
+
     await adminDb
       .collection("devices")
       .doc(deviceId)
@@ -96,7 +98,7 @@ export async function POST(request: Request) {
         deviceName,
         pluginId: pluginId ?? extractPluginId(resolvedWebhookUrl),
         webhookUrlEncrypted: encryptedWebhook,
-        statuses: defaultStatuses,
+        statuses: overlaidStatuses ?? defaultStatuses,
         activeStatusKey: null,
         activeStatusLabel: null,
         createdAt: now,
@@ -111,5 +113,27 @@ export async function POST(request: Request) {
     console.error("register-device error", error);
     const message = error instanceof Error ? error.message : "Failed to register device";
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+async function fetchTrmnlStatuses(webhookUrl: string) {
+  try {
+    const res = await fetch(webhookUrl, { method: "GET" });
+    if (!res.ok) return null;
+    const json = (await res.json()) as unknown;
+    const mv =
+      typeof json === "object" && json && "merge_variables" in json ? (json as Record<string, unknown>).merge_variables : undefined;
+    if (!mv || typeof mv !== "object") return null;
+
+    const statuses = defaultStatuses.map((s) => {
+      const label = (mv as Record<string, unknown>)[`status_${s.key}_label`];
+      return {
+        ...s,
+        label: typeof label === "string" && label.trim().length > 0 ? label.trim().slice(0, 60) : s.label,
+      };
+    });
+    return statuses;
+  } catch {
+    return null;
   }
 }
