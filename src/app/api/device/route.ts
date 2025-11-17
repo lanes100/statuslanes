@@ -90,8 +90,31 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    await ref.update({ statuses: sanitized, updatedAt: Date.now() });
+    const now = Date.now();
+    await ref.update({ statuses: sanitized, updatedAt: now });
     const refreshed = await ref.get();
+
+    // Push labels to TRMNL so webhook can render them
+    const webhookUrlEncrypted = data.webhookUrlEncrypted as string | undefined;
+    if (webhookUrlEncrypted) {
+      const webhookUrl = decrypt(webhookUrlEncrypted);
+      const labelPayload: Record<string, string> = {};
+      sanitized.forEach((s) => {
+        labelPayload[`status_${s.key}_label`] = s.label;
+      });
+      try {
+        await fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            merge_variables: labelPayload,
+            merge_strategy: "deep_merge",
+          }),
+        });
+      } catch (err) {
+        console.error("Failed to push labels to TRMNL", err);
+      }
+    }
 
     return NextResponse.json({ device: refreshed.data() }, { status: 200 });
   } catch (error: unknown) {

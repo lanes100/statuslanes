@@ -28,7 +28,6 @@ export default function DeviceDashboard() {
   const [editMode, setEditMode] = useState(false);
   const [editableStatuses, setEditableStatuses] = useState<Device["statuses"]>([]);
   const [savingStatuses, setSavingStatuses] = useState(false);
-  const [syncing, setSyncing] = useState(false);
   const { toasts, addToast, removeToast } = useToast();
 
   const fetchDevices = useCallback(async () => {
@@ -93,28 +92,6 @@ export default function DeviceDashboard() {
       addToast({ message, type: "error" });
     } finally {
       setSavingStatuses(false);
-    }
-  };
-
-  const syncFromTrmnl = async () => {
-    if (!device) return;
-    setSyncing(true);
-    try {
-      const res = await apiFetch<{ device: Device; labelsResolved?: number }>("/api/sync-trmnl", {
-        method: "POST",
-        body: JSON.stringify({ deviceId: device.deviceId }),
-      });
-      const resolved = res.labelsResolved ?? 0;
-      addToast({
-        message: resolved > 0 ? `Synced ${resolved} labels from TRMNL` : "No labels found in TRMNL merge variables",
-        type: resolved > 0 ? "success" : "info",
-      });
-      await fetchDevices();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to sync from TRMNL";
-      addToast({ message, type: "error" });
-    } finally {
-      setSyncing(false);
     }
   };
 
@@ -210,13 +187,6 @@ export default function DeviceDashboard() {
           className="rounded-full bg-zinc-100 px-3 py-2 text-xs font-semibold text-zinc-800 transition hover:bg-zinc-200"
         >
           {editMode ? "Close editor" : "Edit statuses"}
-        </button>
-        <button
-          onClick={syncFromTrmnl}
-          disabled={syncing}
-          className="rounded-full bg-white px-3 py-2 text-xs font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {syncing ? "Syncing..." : "Sync from TRMNL"}
         </button>
       </div>
 

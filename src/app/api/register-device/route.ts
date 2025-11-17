@@ -87,8 +87,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Server config error: ${msg}` }, { status: 500 });
     }
 
-    const fetched = await fetchTrmnlStatuses(resolvedWebhookUrl);
-
     await adminDb
       .collection("devices")
       .doc(deviceId)
@@ -98,7 +96,7 @@ export async function POST(request: Request) {
         deviceName,
         pluginId: pluginId ?? extractPluginId(resolvedWebhookUrl),
         webhookUrlEncrypted: encryptedWebhook,
-        statuses: fetched?.statuses ?? defaultStatuses,
+        statuses: defaultStatuses,
         activeStatusKey: null,
         activeStatusLabel: null,
         createdAt: now,
@@ -116,38 +114,3 @@ export async function POST(request: Request) {
   }
 }
 
-type TrmnlStatusResult = { statuses: typeof defaultStatuses; resolvedCount: number };
-
-async function fetchTrmnlStatuses(webhookUrl: string): Promise<TrmnlStatusResult | null> {
-  try {
-    const res = await fetch(webhookUrl, { method: "GET" });
-    if (!res.ok) return null;
-    const json = (await res.json()) as unknown;
-    const mv =
-      typeof json === "object" && json && "merge_variables" in json ? (json as Record<string, unknown>).merge_variables : undefined;
-    if (!mv || typeof mv !== "object") return null;
-
-    const activeKeyRaw = (mv as Record<string, unknown>)["status_key"];
-    const activeLabelRaw = (mv as Record<string, unknown>)["status_label"];
-    const activeKey = typeof activeKeyRaw === "number" ? activeKeyRaw : Number(activeKeyRaw);
-    const activeLabel =
-      typeof activeLabelRaw === "string" && activeLabelRaw.trim().length > 0 ? activeLabelRaw.trim().slice(0, 60) : null;
-
-    let resolvedCount = 0;
-    const statuses = defaultStatuses.map((s) => {
-      const label = (mv as Record<string, unknown>)[`status_${s.key}_label`];
-      const nextFromField =
-        typeof label === "string" && label.trim().length > 0 ? label.trim().slice(0, 60) : null;
-      const fallbackFromActive = activeKey === s.key && activeLabel ? activeLabel : null;
-      const nextLabel = nextFromField || fallbackFromActive || s.label;
-      if (nextLabel !== s.label) resolvedCount += 1;
-      return {
-        ...s,
-        label: nextLabel,
-      };
-    });
-    return { statuses, resolvedCount };
-  } catch {
-    return null;
-  }
-}
