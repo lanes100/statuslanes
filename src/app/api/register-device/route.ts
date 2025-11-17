@@ -112,6 +112,8 @@ export async function POST(request: Request) {
         pluginId: pluginId ?? extractPluginId(resolvedWebhookUrl),
         webhookUrlEncrypted: encryptedWebhook,
         statuses: defaultStatuses,
+        showLastUpdated: true,
+        showStatusSource: true,
         activeStatusKey: null,
         activeStatusLabel: null,
         createdAt: now,
@@ -130,7 +132,11 @@ export async function POST(request: Request) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          merge_variables: labelPayload,
+          merge_variables: {
+            ...labelPayload,
+            show_last_updated: true,
+            show_status_source: true,
+          },
           merge_strategy: "deep_merge",
         }),
       });

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { adminAuth } from "@/lib/firebaseAdmin";
 import LogoutButton from "@/components/logout-button";
 import DeviceDashboard from "@/components/device-dashboard";
+import SettingsPanel from "@/components/settings-panel";
 
 const SESSION_COOKIE_NAME = "statuslanes_session";
 
@@ -107,6 +108,8 @@ export default async function Home() {
             <li>See “last updated” and status source info inline.</li>
           </ul>
         </section>
+
+        {user ? <SettingsPanel /> : null}
       </div>
     </div>
   );

@@ -58,6 +58,8 @@ export async function POST(request: Request) {
       merge_variables: {
         status_text: statusLabel,
         status_source: statusSource,
+        show_last_updated: data.showLastUpdated ?? true,
+        show_status_source: data.showStatusSource ?? true,
         updated_at: new Date(updatedAt).toISOString(),
       },
     };

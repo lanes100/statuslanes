@@ -64,22 +64,8 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const deviceId = (body?.deviceId as string | undefined) ?? "default";
     const statuses = body?.statuses as StatusInput[] | undefined;
-
-    if (!statuses || !Array.isArray(statuses)) {
-      return NextResponse.json({ error: "Missing statuses" }, { status: 400 });
-    }
-
-    const sanitized = statuses
-      .map((s) => ({
-        key: Number(s.key),
-        label: typeof s.label === "string" ? s.label.slice(0, 60) : "",
-        enabled: Boolean(s.enabled),
-      }))
-      .filter((s) => Number.isInteger(s.key) && s.key >= 1 && s.key <= 12 && s.label.trim().length > 0);
-
-    if (sanitized.length === 0) {
-      return NextResponse.json({ error: "No valid statuses provided" }, { status: 400 });
-    }
+    const showLastUpdated = body?.showLastUpdated as boolean | undefined;
+    const showStatusSource = body?.showStatusSource as boolean | undefined;
 
     const ref = adminDb.collection("devices").doc(deviceId);
     const snap = await ref.get();
@@ -91,16 +77,46 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const sanitized =
+      statuses && Array.isArray(statuses)
+        ? statuses
+            .map((s) => ({
+              key: Number(s.key),
+              label: typeof s.label === "string" ? s.label.slice(0, 60) : "",
+              enabled: Boolean(s.enabled),
+            }))
+            .filter((s) => Number.isInteger(s.key) && s.key >= 1 && s.key <= 12 && s.label.trim().length > 0)
+        : (data.statuses as StatusInput[] | undefined) ?? [];
+
+    const update: Record<string, unknown> = { updatedAt: Date.now() };
+    if (sanitized.length > 0) {
+      update.statuses = sanitized;
+    }
+    if (typeof showLastUpdated === "boolean") {
+      update.showLastUpdated = showLastUpdated;
+    }
+    if (typeof showStatusSource === "boolean") {
+      update.showStatusSource = showStatusSource;
+    }
+
+    if (!update.statuses && !("showLastUpdated" in update) && !("showStatusSource" in update)) {
+      return NextResponse.json({ error: "No updates provided" }, { status: 400 });
+    }
+
     const now = Date.now();
-    await ref.update({ statuses: sanitized, updatedAt: now });
+    update.updatedAt = now;
+
+    await ref.update(update);
     const refreshed = await ref.get();
+    const refreshedData = refreshed.data();
 
     // Push labels to TRMNL so webhook can render them
     const webhookUrlEncrypted = data.webhookUrlEncrypted as string | undefined;
     if (webhookUrlEncrypted) {
       const webhookUrl = decrypt(webhookUrlEncrypted);
       const labelPayload: Record<string, string> = {};
-      sanitized
+      const statusesForPush = sanitized.length > 0 ? sanitized : (refreshedData?.statuses as StatusInput[] | undefined) ?? [];
+      statusesForPush
         .filter((s) => s.key >= 1 && s.key <= 10)
         .forEach((s) => {
           labelPayload[`status_${s.key}_label`] = s.label;
@@ -110,7 +126,11 @@ export async function PATCH(request: Request) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            merge_variables: labelPayload,
+            merge_variables: {
+              ...labelPayload,
+              show_last_updated: typeof showLastUpdated === "boolean" ? showLastUpdated : data.showLastUpdated ?? true,
+              show_status_source: typeof showStatusSource === "boolean" ? showStatusSource : data.showStatusSource ?? true,
+            },
             merge_strategy: "deep_merge",
           }),
         });
@@ -119,7 +139,7 @@ export async function PATCH(request: Request) {
       }
     }
 
-    return NextResponse.json({ device: refreshed.data() }, { status: 200 });
+    return NextResponse.json({ device: refreshedData }, { status: 200 });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "UNAUTHENTICATED") {
       return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
