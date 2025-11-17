@@ -118,7 +118,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center rounded-lg bg-white px-4 py-2 text-black shadow-sm transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center justify-center rounded-lg bg-zinc-100 px-4 py-2 text-zinc-800 shadow-sm transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
           >
             {loading
               ? "Please wait..."

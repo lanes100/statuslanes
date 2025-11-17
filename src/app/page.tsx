@@ -53,7 +53,7 @@ export default async function Home() {
               <div className="flex flex-col gap-3">
                 <Link
                   href="/login"
-                  className="w-full rounded-xl bg-white px-4 py-3 text-center text-sm font-semibold text-black shadow-sm transition hover:bg-white/90"
+                  className="w-full rounded-xl bg-zinc-100 px-4 py-3 text-center text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
                 >
                   Sign in or create account
                 </Link>
