@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import { ToastShelf, useToast } from "@/components/toast";
+import { applyTheme } from "@/lib/theme";
 
 type Device = {
   deviceId: string;
@@ -11,6 +12,11 @@ type Device = {
   activeStatusKey: number | null;
   activeStatusLabel: string | null;
   updatedAt: number | null;
+  showLastUpdated?: boolean;
+  showStatusSource?: boolean;
+  timezone?: string;
+  timeFormat?: string;
+  dateFormat?: string;
 };
 
 type FetchState =
@@ -50,6 +56,10 @@ export default function DeviceDashboard() {
 
   useEffect(() => {
     fetchDevices();
+    const stored = typeof window !== "undefined" ? localStorage.getItem("theme") : null;
+    if (stored === "dark" || stored === "light") {
+      applyTheme(stored);
+    }
   }, [fetchDevices]);
 
   const device = useMemo(() => {
@@ -177,7 +187,7 @@ export default function DeviceDashboard() {
         <div>
           <p className="text-sm font-semibold text-zinc-900">{device.deviceName}</p>
           <p className="text-xs text-zinc-600">
-            {device.activeStatusLabel ? `Active: ${device.activeStatusLabel}` : "No status set yet"}
+            {device.activeStatusLabel ? `I am ${device.activeStatusLabel}` : "No status set yet"}
           </p>
         </div>
         {device.updatedAt ? (

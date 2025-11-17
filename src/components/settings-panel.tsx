@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import { ToastShelf, useToast } from "@/components/toast";
-import { applyTheme } from "@/components/theme-init";
+import { applyTheme } from "@/lib/theme";
 
 type DeviceSettings = {
   deviceId: string;
