@@ -4,11 +4,12 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebaseClient";
 
-type Mode = "login" | "signup";
+type Mode = "login" | "signup" | "forgot";
 
 export default function LoginPage() {
   const [mode, setMode] = useState<Mode>("login");
@@ -25,6 +26,12 @@ export default function LoginPage() {
 
     try {
       const auth = getFirebaseAuth();
+      if (mode === "forgot") {
+        await sendPasswordResetEmail(auth, email);
+        setError("Password reset email sent. Check your inbox.");
+        setLoading(false);
+        return;
+      }
       const userCredential =
         mode === "login"
           ? await signInWithEmailAndPassword(auth, email, password)
@@ -92,8 +99,19 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-50 shadow-sm focus:border-white focus:outline-none focus:ring-2 focus:ring-white/10"
+              disabled={mode === "forgot"}
             />
           </div>
+
+          {mode !== "forgot" && (
+            <button
+              type="button"
+              className="text-xs text-zinc-200 underline underline-offset-4"
+              onClick={() => setMode("forgot")}
+            >
+              Forgot password?
+            </button>
+          )}
 
           {error && <p className="text-sm text-red-400">{error}</p>}
 
@@ -102,24 +120,30 @@ export default function LoginPage() {
             disabled={loading}
             className="flex w-full items-center justify-center rounded-lg bg-white px-4 py-2 text-black shadow-sm transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
+            {loading
+              ? "Please wait..."
+              : mode === "login"
+                ? "Sign in"
+                : mode === "signup"
+                  ? "Create account"
+                  : "Send reset email"}
           </button>
         </form>
 
         <div className="mt-4 text-sm text-zinc-300">
-          {mode === "login" ? (
-            <button
-              className="text-zinc-100 underline underline-offset-4"
-              onClick={() => setMode("signup")}
-            >
+          {mode === "login" && (
+            <button className="text-zinc-100 underline underline-offset-4" onClick={() => setMode("signup")}>
               New here? Create an account
             </button>
-          ) : (
-            <button
-              className="text-zinc-100 underline underline-offset-4"
-              onClick={() => setMode("login")}
-            >
+          )}
+          {mode === "signup" && (
+            <button className="text-zinc-100 underline underline-offset-4" onClick={() => setMode("login")}>
               Already have an account? Sign in
+            </button>
+          )}
+          {mode === "forgot" && (
+            <button className="text-zinc-100 underline underline-offset-4" onClick={() => setMode("login")}>
+              Back to sign in
             </button>
           )}
         </div>

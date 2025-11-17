@@ -35,23 +35,14 @@ export default async function Home() {
               {user ? "Manage your device status from here." : "Sign in to manage your device status."}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            {user ? (
-              <>
-                <div className="rounded-full bg-zinc-100 px-3 py-2 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
-                  {user.email}
-                </div>
-                <LogoutButton />
-              </>
-            ) : (
-              <Link
-                href="/login"
-                className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-black/90"
-              >
-                Sign in
-              </Link>
-            )}
-          </div>
+          {user ? (
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-zinc-100 px-3 py-2 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
+                {user.email}
+              </div>
+              <LogoutButton />
+            </div>
+          ) : null}
         </header>
 
         <main className="flex flex-col gap-6">
@@ -62,7 +53,7 @@ export default async function Home() {
               <div className="flex flex-col gap-3">
                 <Link
                   href="/login"
-                  className="w-full rounded-xl bg-black px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-black/90"
+                  className="w-full rounded-xl bg-white px-4 py-3 text-center text-sm font-semibold text-black shadow-sm transition hover:bg-white/90"
                 >
                   Sign in or create account
                 </Link>
