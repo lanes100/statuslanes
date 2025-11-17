@@ -50,10 +50,10 @@ export async function POST(request: Request) {
     }
 
     const webhookUrl = decrypt(webhookUrlEncrypted);
+    // Send only the key; TRMNL resolves labels from plugin fields.
     const payload = {
       merge_variables: {
         status_key: statusKey,
-        status_label: statusLabel,
         updated_at: new Date(updatedAt).toISOString(),
       },
     };

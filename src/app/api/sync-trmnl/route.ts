@@ -22,7 +22,8 @@ async function requireUser() {
 async function fetchTrmnlStatuses(webhookUrl: string) {
   const res = await fetch(webhookUrl, { method: "GET" });
   if (!res.ok) {
-    throw new Error(`TRMNL responded ${res.status}`);
+    const body = await res.text();
+    throw new Error(`TRMNL responded ${res.status}: ${body || "no body"}`);
   }
   const json = (await res.json()) as unknown;
   const mv =
