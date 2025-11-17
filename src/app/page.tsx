@@ -23,7 +23,7 @@ export default async function Home() {
   const user = await getSessionUser();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-white px-4 py-10 text-zinc-900">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-white px-4 py-10 text-zinc-900 dark:from-zinc-950 dark:to-zinc-900 dark:text-zinc-50">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -51,7 +51,7 @@ export default async function Home() {
         </header>
 
         <main className="flex flex-col gap-6">
-          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             {user ? (
               <DeviceDashboard />
             ) : (

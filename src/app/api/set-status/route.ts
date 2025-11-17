@@ -42,6 +42,12 @@ export async function POST(request: Request) {
     }
 
     const updatedAt = Date.now();
+    const formattedTimestamp = formatTimestamp(
+      updatedAt,
+      data.timezone || "UTC",
+      data.dateFormat || "MDY",
+      data.timeFormat || "24h",
+    );
     await ref.update({
       activeStatusKey: statusKey ?? null,
       activeStatusLabel: statusLabel,
@@ -60,7 +66,10 @@ export async function POST(request: Request) {
         status_source: statusSource,
         show_last_updated: data.showLastUpdated ?? true,
         show_status_source: data.showStatusSource ?? false,
-        updated_at: new Date(updatedAt).toISOString(),
+        timezone: data.timezone,
+        time_format: data.timeFormat,
+        date_format: data.dateFormat,
+        updated_at: formattedTimestamp,
       },
     };
 
@@ -87,6 +96,44 @@ export async function POST(request: Request) {
     console.error("set-status error", error);
     return NextResponse.json({ error: "Failed to set status" }, { status: 500 });
   }
+}
+
+function formatTimestamp(
+  timestamp: number,
+  timezone: string,
+  dateFormat: string,
+  timeFormat: string,
+): string {
+  const date = new Date(timestamp);
+  const hour12 = timeFormat !== "24h";
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12,
+  }).formatToParts(date);
+
+  const lookup: Record<string, string> = {};
+  for (const p of parts) {
+    if (p.type !== "literal") {
+      lookup[p.type] = p.value;
+    }
+  }
+
+  const yyyy = lookup.year;
+  const mm = lookup.month;
+  const dd = lookup.day;
+
+  const dateStr =
+    dateFormat === "DMY" ? `${dd}/${mm}/${yyyy}` : dateFormat === "YMD" ? `${yyyy}-${mm}-${dd}` : `${mm}/${dd}/${yyyy}`;
+
+  const timeStr = `${lookup.hour ?? ""}:${lookup.minute ?? ""}${hour12 && lookup.dayPeriod ? " " + lookup.dayPeriod : ""}`;
+
+  return `${dateStr} ${timeStr}`.trim();
 }
 
 async function sendWebhookWithRetry(url: string, body: Record<string, unknown>) {
