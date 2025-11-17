@@ -5,7 +5,8 @@ import { cookies } from "next/headers";
 const SESSION_COOKIE_NAME = "statuslanes_session";
 
 async function requireUser() {
-  const sessionCookie = cookies().get(SESSION_COOKIE_NAME)?.value;
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!sessionCookie) {
     throw new Error("UNAUTHENTICATED");
   }
