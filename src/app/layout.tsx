@@ -16,7 +16,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Statuslanes",
   description: "Set your TRMNL status from anywhere.",
-  themeColor: "#000000",
 };
 
 export default function RootLayout({
