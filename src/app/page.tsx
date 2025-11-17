@@ -27,16 +27,20 @@ export default async function Home() {
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Statuslanes</p>
-            <h1 className="mt-1 text-3xl font-semibold leading-tight">{user ? "Your TRMNL" : "Update your TRMNL status"}</h1>
-            <p className="mt-1 text-sm text-zinc-600">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">Statuslanes</p>
+            <h1 className="mt-1 text-3xl font-semibold leading-tight text-zinc-900 dark:text-zinc-50">
+              {user ? "Your TRMNL" : "Update your TRMNL status"}
+            </h1>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
               {user ? "Manage your device status from here." : "Sign in to manage your device status."}
             </p>
           </div>
           <div className="flex items-center gap-3">
             {user ? (
               <>
-                <div className="rounded-full bg-zinc-100 px-3 py-2 text-sm text-zinc-700">{user.email}</div>
+                <div className="rounded-full bg-zinc-100 px-3 py-2 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
+                  {user.email}
+                </div>
                 <LogoutButton />
               </>
             ) : (

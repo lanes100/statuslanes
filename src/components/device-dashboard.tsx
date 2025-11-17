@@ -123,9 +123,9 @@ export default function DeviceDashboard() {
 
   if (state.status === "error") {
     return (
-      <div className="flex flex-col gap-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
-        <div className="font-semibold text-amber-900">Register your TRMNL plugin</div>
-        <p className="text-amber-900">
+      <div className="flex flex-col gap-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-500/70 dark:bg-amber-100/10 dark:text-amber-100">
+        <div className="font-semibold">Register your TRMNL plugin</div>
+        <p className="">
           Paste the TRMNL Plugin UUID from your custom plugin settings.
         </p>
         <form
@@ -152,7 +152,7 @@ export default function DeviceDashboard() {
             <input
               value={pluginId}
               onChange={(e) => setPluginId(e.target.value)}
-              className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-amber-900 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-amber-900 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-amber-400/60 dark:bg-amber-50/10 dark:text-amber-100"
               placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
               required
             />
@@ -162,14 +162,14 @@ export default function DeviceDashboard() {
             <input
               value={deviceName}
               onChange={(e) => setDeviceName(e.target.value)}
-              className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-amber-900 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-amber-900 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-amber-400/60 dark:bg-amber-50/10 dark:text-amber-100"
               placeholder="My TRMNL"
             />
           </div>
           <button
             type="submit"
             disabled={savingDevice}
-            className="w-full rounded-lg bg-black px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-70"
+            className="w-full rounded-lg bg-black px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-white dark:text-black dark:hover:bg-white/90"
           >
             {savingDevice ? "Saving..." : "Save plugin"}
           </button>
@@ -182,15 +182,17 @@ export default function DeviceDashboard() {
   if (!device) return null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 text-zinc-900 dark:text-zinc-100">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-semibold text-zinc-900">{device.deviceName}</p>
-          <p className="text-xs text-zinc-600">
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{device.deviceName}</p>
+          <p className="text-xs text-zinc-600 dark:text-zinc-300">
             {device.activeStatusLabel ? `I am ${device.activeStatusLabel}` : "No status set yet"}
           </p>
         </div>
-        {device.updatedAt ? <p className="text-xs text-zinc-500">Updated {new Date(device.updatedAt).toLocaleTimeString()}</p> : null}
+        {device.updatedAt ? (
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">Updated {new Date(device.updatedAt).toLocaleTimeString()}</p>
+        ) : null}
       </div>
       <div className="flex items-center gap-2">
         <button
@@ -227,9 +229,12 @@ export default function DeviceDashboard() {
       {editMode ? (
         <div className="space-y-3">
           {editableStatuses.map((status, idx) => (
-            <div key={`${status.key}-${idx}`} className="flex items-center gap-3 rounded-lg border border-zinc-200 p-3">
+            <div
+              key={`${status.key}-${idx}`}
+              className="flex items-center gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800 dark:bg-zinc-900"
+            >
               <input
-                className="flex-1 rounded-md border border-zinc-200 px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10"
+                className="flex-1 rounded-md border border-zinc-200 px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-white dark:focus:ring-white/10"
                 value={status.label}
                 onChange={(e) => {
                   const next = [...editableStatuses];
@@ -239,7 +244,7 @@ export default function DeviceDashboard() {
               />
               <button
                 type="button"
-                className="rounded-md bg-zinc-100 px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-200"
+                className="rounded-md bg-zinc-100 px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
                 onClick={() => {
                   setEditableStatuses((prev) => prev.filter((_, i) => i !== idx));
                 }}
@@ -263,7 +268,9 @@ export default function DeviceDashboard() {
                   onClick={() => setStatus(key, label)}
                   disabled={isPending}
                   className={`rounded-xl px-3 py-3 text-sm font-semibold shadow-sm transition ${
-                    isActive ? "bg-black text-white" : "bg-zinc-100 text-zinc-900 hover:bg-zinc-200"
+                    isActive
+                      ? "bg-black text-white"
+                      : "bg-zinc-100 text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
                   } ${isPending ? "opacity-70" : ""}`}
                   style={{ minHeight: 56 }}
                 >
