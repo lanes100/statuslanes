@@ -79,18 +79,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Device ID already used" }, { status: 409 });
     }
 
-    await adminDb.collection("devices").doc(deviceId).set({
-      deviceId,
-      userId: user.uid,
-      deviceName,
-      pluginId: pluginId ?? extractPluginId(resolvedWebhookUrl),
-      webhookUrlEncrypted: encrypt(resolvedWebhookUrl),
-      statuses: defaultStatuses,
-      activeStatusKey: null,
-      activeStatusLabel: null,
-      createdAt: now,
-      updatedAt: now,
-    });
+    let encryptedWebhook: string;
+    try {
+      encryptedWebhook = encrypt(resolvedWebhookUrl);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Encryption failed";
+      return NextResponse.json({ error: `Server config error: ${msg}` }, { status: 500 });
+    }
+
+    await adminDb
+      .collection("devices")
+      .doc(deviceId)
+      .set({
+        deviceId,
+        userId: user.uid,
+        deviceName,
+        pluginId: pluginId ?? extractPluginId(resolvedWebhookUrl),
+        webhookUrlEncrypted: encryptedWebhook,
+        statuses: defaultStatuses,
+        activeStatusKey: null,
+        activeStatusLabel: null,
+        createdAt: now,
+        updatedAt: now,
+      });
 
     return NextResponse.json({ deviceId }, { status: 200 });
   } catch (error: unknown) {
@@ -98,6 +109,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
     }
     console.error("register-device error", error);
-    return NextResponse.json({ error: "Failed to register device" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to register device";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
