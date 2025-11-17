@@ -97,9 +97,12 @@ export default function DeviceDashboard() {
 
   if (state.status === "loading" || state.status === "idle") {
     return (
-      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
-        Loading your device…
-      </div>
+      <>
+        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
+          Loading your device…
+        </div>
+        <ToastShelf toasts={toasts} onClose={removeToast} />
+      </>
     );
   }
 
@@ -115,7 +118,7 @@ export default function DeviceDashboard() {
           onSubmit={async (e: FormEvent<HTMLFormElement>) => {
             e.preventDefault();
             if (!pluginId.trim()) return;
-              setSavingDevice(true);
+            setSavingDevice(true);
             try {
               const body = { pluginId: pluginId.trim(), deviceName: deviceName.trim() || "My TRMNL" };
               await apiFetch("/api/register-device", { method: "POST", body: JSON.stringify(body) });
@@ -153,9 +156,10 @@ export default function DeviceDashboard() {
             disabled={savingDevice}
             className="w-full rounded-lg bg-black px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {savingDevice ? "Saving..." : "Save webhook"}
+            {savingDevice ? "Saving..." : "Save plugin"}
           </button>
         </form>
+        <ToastShelf toasts={toasts} onClose={removeToast} />
       </div>
     );
   }
