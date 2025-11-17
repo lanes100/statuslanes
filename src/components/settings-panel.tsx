@@ -71,9 +71,12 @@ export default function SettingsPanel() {
     fetchDevice();
   }, [addToast]);
 
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
   const toggleTheme = (next: "light" | "dark") => {
     setTheme(next);
-    applyTheme(next);
   };
 
   const saveSettings = async () => {
