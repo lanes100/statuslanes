@@ -3,11 +3,15 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import { ToastShelf, useToast } from "@/components/toast";
+import { applyTheme } from "@/components/theme-init";
 
 type DeviceSettings = {
   deviceId: string;
   showLastUpdated?: boolean;
   showStatusSource?: boolean;
+  timezone?: string;
+  timeFormat?: string;
+  dateFormat?: string;
 };
 
 export default function SettingsPanel() {
@@ -16,12 +20,22 @@ export default function SettingsPanel() {
   const [saving, setSaving] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const { toasts, addToast, removeToast } = useToast();
+  const timezones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [];
+  const timeFormats = [
+    { value: "24h", label: "24-hour" },
+    { value: "12h", label: "12-hour" },
+  ];
+  const dateFormats = [
+    { value: "MDY", label: "MM/DD/YYYY" },
+    { value: "DMY", label: "DD/MM/YYYY" },
+    { value: "YMD", label: "YYYY-MM-DD" },
+  ];
 
   useEffect(() => {
     const stored = localStorage.getItem("theme");
     if (stored === "dark" || stored === "light") {
       setTheme(stored);
-      document.documentElement.classList.toggle("dark", stored === "dark");
+      applyTheme(stored);
     }
   }, []);
 
@@ -29,13 +43,23 @@ export default function SettingsPanel() {
     const fetchDevice = async () => {
       try {
         setLoading(true);
-        const res = await apiFetch<{ device: { deviceId: string; showLastUpdated?: boolean; showStatusSource?: boolean } }>(
-          "/api/device",
-        );
+        const res = await apiFetch<{
+          device: {
+            deviceId: string;
+            showLastUpdated?: boolean;
+            showStatusSource?: boolean;
+            timezone?: string;
+            timeFormat?: string;
+            dateFormat?: string;
+          };
+        }>("/api/device");
         setDevice({
           deviceId: res.device.deviceId,
           showLastUpdated: res.device.showLastUpdated ?? true,
-          showStatusSource: res.device.showStatusSource ?? true,
+          showStatusSource: res.device.showStatusSource ?? false,
+          timezone: res.device.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+          timeFormat: res.device.timeFormat ?? "24h",
+          dateFormat: res.device.dateFormat ?? "MDY",
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load settings";
@@ -49,8 +73,7 @@ export default function SettingsPanel() {
 
   const toggleTheme = (next: "light" | "dark") => {
     setTheme(next);
-    localStorage.setItem("theme", next);
-    document.documentElement.classList.toggle("dark", next === "dark");
+    applyTheme(next);
   };
 
   const saveSettings = async () => {
@@ -63,6 +86,9 @@ export default function SettingsPanel() {
           deviceId: device.deviceId,
           showLastUpdated: device.showLastUpdated,
           showStatusSource: device.showStatusSource,
+          timezone: device.timezone,
+          timeFormat: device.timeFormat,
+          dateFormat: device.dateFormat,
         }),
       });
       addToast({ message: "Settings updated", type: "success" });
@@ -91,7 +117,7 @@ export default function SettingsPanel() {
 
       <div className="space-y-3">
         <label className="flex items-center justify-between gap-3 text-sm text-zinc-800">
-          <span>Show last updated</span>
+          <span>Show last updated (default on)</span>
           <input
             type="checkbox"
             className="h-4 w-4"
@@ -100,11 +126,11 @@ export default function SettingsPanel() {
           />
         </label>
         <label className="flex items-center justify-between gap-3 text-sm text-zinc-800">
-          <span>Show status source</span>
+          <span>Show status source (default off)</span>
           <input
             type="checkbox"
             className="h-4 w-4"
-            checked={device.showStatusSource ?? true}
+            checked={device.showStatusSource ?? false}
             onChange={(e) => setDevice({ ...device, showStatusSource: e.target.checked })}
           />
         </label>
@@ -112,6 +138,7 @@ export default function SettingsPanel() {
           <span>Theme</span>
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={() => toggleTheme("light")}
               className={`rounded-full px-3 py-1 text-xs font-semibold ${
                 theme === "light" ? "bg-black text-white" : "bg-zinc-100 text-zinc-800"
@@ -120,6 +147,7 @@ export default function SettingsPanel() {
               Light
             </button>
             <button
+              type="button"
               onClick={() => toggleTheme("dark")}
               className={`rounded-full px-3 py-1 text-xs font-semibold ${
                 theme === "dark" ? "bg-black text-white" : "bg-zinc-100 text-zinc-800"
@@ -129,6 +157,48 @@ export default function SettingsPanel() {
             </button>
           </div>
         </div>
+        <label className="flex items-center justify-between gap-3 text-sm text-zinc-800">
+          <span>Timezone</span>
+          <select
+            value={device.timezone ?? ""}
+            onChange={(e) => setDevice({ ...device, timezone: e.target.value })}
+            className="w-48 rounded-md border border-zinc-200 px-2 py-1 text-sm"
+          >
+            {(device.timezone ? [device.timezone] : []).concat(timezones).filter((v, i, arr) => arr.indexOf(v) === i).map((tz) => (
+              <option key={tz} value={tz}>
+                {tz}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center justify-between gap-3 text-sm text-zinc-800">
+          <span>Time format</span>
+          <select
+            value={device.timeFormat ?? "24h"}
+            onChange={(e) => setDevice({ ...device, timeFormat: e.target.value })}
+            className="w-32 rounded-md border border-zinc-200 px-2 py-1 text-sm"
+          >
+            {timeFormats.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center justify-between gap-3 text-sm text-zinc-800">
+          <span>Date format</span>
+          <select
+            value={device.dateFormat ?? "MDY"}
+            onChange={(e) => setDevice({ ...device, dateFormat: e.target.value })}
+            className="w-32 rounded-md border border-zinc-200 px-2 py-1 text-sm"
+          >
+            {dateFormats.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <button

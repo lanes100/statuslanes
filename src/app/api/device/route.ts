@@ -98,8 +98,27 @@ export async function PATCH(request: Request) {
     if (typeof showStatusSource === "boolean") {
       update.showStatusSource = showStatusSource;
     }
+    const timezone = body?.timezone as string | undefined;
+    const timeFormat = body?.timeFormat as string | undefined;
+    const dateFormat = body?.dateFormat as string | undefined;
+    if (typeof timezone === "string") {
+      update.timezone = timezone;
+    }
+    if (typeof timeFormat === "string") {
+      update.timeFormat = timeFormat;
+    }
+    if (typeof dateFormat === "string") {
+      update.dateFormat = dateFormat;
+    }
 
-    if (!update.statuses && !("showLastUpdated" in update) && !("showStatusSource" in update)) {
+    if (
+      !update.statuses &&
+      !("showLastUpdated" in update) &&
+      !("showStatusSource" in update) &&
+      !("timezone" in update) &&
+      !("timeFormat" in update) &&
+      !("dateFormat" in update)
+    ) {
       return NextResponse.json({ error: "No updates provided" }, { status: 400 });
     }
 
@@ -130,6 +149,9 @@ export async function PATCH(request: Request) {
               ...labelPayload,
               show_last_updated: typeof showLastUpdated === "boolean" ? showLastUpdated : data.showLastUpdated ?? true,
               show_status_source: typeof showStatusSource === "boolean" ? showStatusSource : data.showStatusSource ?? true,
+              timezone: timezone ?? data.timezone,
+              time_format: timeFormat ?? data.timeFormat,
+              date_format: dateFormat ?? data.dateFormat,
             },
             merge_strategy: "deep_merge",
           }),

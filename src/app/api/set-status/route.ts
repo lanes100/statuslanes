@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         status_text: statusLabel,
         status_source: statusSource,
         show_last_updated: data.showLastUpdated ?? true,
-        show_status_source: data.showStatusSource ?? true,
+        show_status_source: data.showStatusSource ?? false,
         updated_at: new Date(updatedAt).toISOString(),
       },
     };
