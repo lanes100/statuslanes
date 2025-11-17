@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 
 const PUBLIC_PATHS = [
   "/login",
+  "/reset-password",
   "/manifest.webmanifest",
   "/manifest.json",
   "/favicon.ico",
