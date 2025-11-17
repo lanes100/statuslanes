@@ -1,0 +1,102 @@
+import { NextResponse } from "next/server";
+import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import { cookies } from "next/headers";
+import { encrypt } from "@/lib/crypto";
+
+const SESSION_COOKIE_NAME = "statuslanes_session";
+
+const defaultStatuses = Array.from({ length: 10 }).map((_, idx) => ({
+  key: idx + 1,
+  label: `Status ${idx + 1}`,
+  enabled: true,
+}));
+
+async function requireUser() {
+  const sessionCookie = cookies().get(SESSION_COOKIE_NAME)?.value;
+  if (!sessionCookie) {
+    throw new Error("UNAUTHENTICATED");
+  }
+  const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
+  return { uid: decoded.uid, email: decoded.email ?? null };
+}
+
+function isValidTrmnlWebhook(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const hostValid = parsed.hostname.endsWith("usetrmnl.com");
+    const pathValid = /^\/api\/custom_plugins\/[a-zA-Z0-9_-]+$/.test(parsed.pathname);
+    return hostValid && pathValid && ["https:"].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
+
+function isValidPluginId(id: string): boolean {
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+}
+
+function extractPluginId(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const match = parsed.pathname.match(/\/api\/custom_plugins\/([^/]+)/);
+    return match?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const user = await requireUser();
+    const body = await request.json();
+    const webhookUrl = (body?.webhookUrl as string | undefined)?.trim();
+    const pluginId = (body?.pluginId as string | undefined)?.trim();
+    const deviceName = (body?.deviceName as string | undefined) ?? "My TRMNL";
+    const incomingDeviceId = body?.deviceId as string | undefined;
+
+    let resolvedWebhookUrl = webhookUrl;
+
+    if (!resolvedWebhookUrl && pluginId) {
+      if (!isValidPluginId(pluginId)) {
+        return NextResponse.json({ error: "Invalid TRMNL plugin ID" }, { status: 400 });
+      }
+      resolvedWebhookUrl = `https://usetrmnl.com/api/custom_plugins/${pluginId}`;
+    }
+
+    if (!resolvedWebhookUrl) {
+      return NextResponse.json({ error: "Missing webhook url or pluginId" }, { status: 400 });
+    }
+
+    if (!isValidTrmnlWebhook(resolvedWebhookUrl)) {
+      return NextResponse.json({ error: "Invalid TRMNL webhook URL" }, { status: 400 });
+    }
+
+    const deviceId = incomingDeviceId || "default";
+    const now = Date.now();
+    const existing = await adminDb.collection("devices").doc(deviceId).get();
+    if (existing.exists && existing.data()?.userId !== user.uid) {
+      return NextResponse.json({ error: "Device ID already used" }, { status: 409 });
+    }
+
+    await adminDb.collection("devices").doc(deviceId).set({
+      deviceId,
+      userId: user.uid,
+      deviceName,
+      pluginId: pluginId ?? extractPluginId(resolvedWebhookUrl),
+      webhookUrlEncrypted: encrypt(resolvedWebhookUrl),
+      statuses: defaultStatuses,
+      activeStatusKey: null,
+      activeStatusLabel: null,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return NextResponse.json({ deviceId }, { status: 200 });
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === "UNAUTHENTICATED") {
+      return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
+    }
+    console.error("register-device error", error);
+    return NextResponse.json({ error: "Failed to register device" }, { status: 500 });
+  }
+}
