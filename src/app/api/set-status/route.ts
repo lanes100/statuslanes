@@ -58,8 +58,12 @@ export async function POST(request: Request) {
 
     const webhookRes = await sendWebhookWithRetry(webhookUrl, payload);
     if (!webhookRes.ok) {
+      const bodyText = await webhookRes.text();
       return NextResponse.json(
-        { error: "Failed to notify TRMNL", status: webhookRes.status, body: await webhookRes.text() },
+        {
+          error: `TRMNL responded ${webhookRes.status}: ${bodyText || "No body"}`,
+          status: webhookRes.status,
+        },
         { status: 502 },
       );
     }
