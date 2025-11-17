@@ -188,10 +188,18 @@ export default function DeviceDashboard() {
       </div>
       <div className="flex items-center gap-2">
         <button
-          onClick={() => setEditMode((v) => !v)}
+          onClick={async () => {
+            if (editMode) {
+              await saveStatuses();
+              setEditMode(false);
+              if (device) setEditableStatuses(device.statuses);
+            } else {
+              setEditMode(true);
+            }
+          }}
           className="rounded-full bg-zinc-100 px-3 py-2 text-xs font-semibold text-zinc-800 transition hover:bg-zinc-200"
         >
-          {editMode ? "Close editor" : "Edit statuses"}
+          {editMode ? "Save and close" : "Edit statuses"}
         </button>
         {editMode && (
           <button
@@ -215,11 +223,6 @@ export default function DeviceDashboard() {
           {editableStatuses.map((status, idx) => (
             <div key={`${status.key}-${idx}`} className="flex items-center gap-3 rounded-lg border border-zinc-200 p-3">
               <input
-                className="w-16 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-2 text-xs text-zinc-700"
-                value={status.key}
-                readOnly
-              />
-              <input
                 className="flex-1 rounded-md border border-zinc-200 px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10"
                 value={status.label}
                 onChange={(e) => {
@@ -228,43 +231,23 @@ export default function DeviceDashboard() {
                   setEditableStatuses(next);
                 }}
               />
-              <label className="flex items-center gap-2 text-xs text-zinc-700">
-                <input
-                  type="checkbox"
-                  checked={status.enabled}
-                  onChange={(e) => {
-                    const next = [...editableStatuses];
-                    next[idx] = { ...status, enabled: e.target.checked };
-                    setEditableStatuses(next);
-                  }}
-                />
-                Enabled
-              </label>
+              <button
+                type="button"
+                className="rounded-md bg-zinc-100 px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-200"
+                onClick={() => {
+                  setEditableStatuses((prev) => prev.filter((_, i) => i !== idx));
+                }}
+              >
+                Delete
+              </button>
             </div>
           ))}
-          <div className="flex gap-2">
-            <button
-              onClick={saveStatuses}
-              disabled={savingStatuses}
-              className="flex-1 rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {savingStatuses ? "Saving..." : "Save changes"}
-            </button>
-            <button
-              onClick={() => {
-                setEditMode(false);
-                if (device) setEditableStatuses(device.statuses);
-              }}
-              className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50"
-            >
-              Cancel
-            </button>
-          </div>
+          {savingStatuses ? <p className="text-xs text-zinc-500">Saving…</p> : null}
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {device.statuses
-            .filter((s) => s.enabled)
+            .filter((s) => s.enabled && s.label.trim().length > 0)
             .map(({ key, label }) => {
               const isActive = key === device.activeStatusKey;
               const isPending = pendingStatus === `${device.deviceId}:${key}`;
