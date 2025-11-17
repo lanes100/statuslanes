@@ -51,9 +51,11 @@ export async function POST(request: Request) {
 
     const webhookUrl = decrypt(webhookUrlEncrypted);
     const payload = {
-      status_key: statusKey,
-      status_label: statusLabel,
-      updated_at: new Date(updatedAt).toISOString(),
+      merge_variables: {
+        status_key: statusKey,
+        status_label: statusLabel,
+        updated_at: new Date(updatedAt).toISOString(),
+      },
     };
 
     const webhookRes = await sendWebhookWithRetry(webhookUrl, payload);
