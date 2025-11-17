@@ -55,18 +55,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6">
-      <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold text-zinc-900">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-6 text-zinc-50">
+      <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-8 shadow-sm">
+        <h1 className="text-2xl font-semibold text-zinc-50">
           {mode === "login" ? "Sign in" : "Create account"}
         </h1>
-        <p className="mt-1 text-sm text-zinc-600">
+        <p className="mt-1 text-sm text-zinc-300">
           Use the email and password you want for Statuslanes.
         </p>
 
         <form className="mt-6 space-y-4" onSubmit={submit}>
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-zinc-800" htmlFor="email">
+            <label className="block text-sm font-medium text-zinc-100" htmlFor="email">
               Email
             </label>
             <input
@@ -76,12 +76,12 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 shadow-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10"
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-50 shadow-sm focus:border-white focus:outline-none focus:ring-2 focus:ring-white/10"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-zinc-800" htmlFor="password">
+            <label className="block text-sm font-medium text-zinc-100" htmlFor="password">
               Password
             </label>
             <input
@@ -91,32 +91,32 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 shadow-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10"
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-50 shadow-sm focus:border-white focus:outline-none focus:ring-2 focus:ring-white/10"
             />
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-400">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center rounded-lg bg-black px-4 py-2 text-white shadow-sm transition hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center justify-center rounded-lg bg-white px-4 py-2 text-black shadow-sm transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
           </button>
         </form>
 
-        <div className="mt-4 text-sm text-zinc-700">
+        <div className="mt-4 text-sm text-zinc-300">
           {mode === "login" ? (
             <button
-              className="text-black underline underline-offset-4"
+              className="text-zinc-100 underline underline-offset-4"
               onClick={() => setMode("signup")}
             >
               New here? Create an account
             </button>
           ) : (
             <button
-              className="text-black underline underline-offset-4"
+              className="text-zinc-100 underline underline-offset-4"
               onClick={() => setMode("login")}
             >
               Already have an account? Sign in

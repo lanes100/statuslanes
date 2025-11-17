@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import { ToastShelf, useToast } from "@/components/toast";
-import { applyTheme } from "@/lib/theme";
 
 type DeviceSettings = {
   deviceId: string;
@@ -18,7 +17,6 @@ export default function SettingsPanel() {
   const [device, setDevice] = useState<DeviceSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
   const { toasts, addToast, removeToast } = useToast();
   const timezones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [];
   const timeFormats = [
@@ -30,14 +28,6 @@ export default function SettingsPanel() {
     { value: "DMY", label: "DD/MM/YYYY" },
     { value: "YMD", label: "YYYY-MM-DD" },
   ];
-
-  useEffect(() => {
-    const stored = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const initial = stored === "dark" || stored === "light" ? stored : prefersDark ? "dark" : "light";
-    setTheme(initial);
-    applyTheme(initial);
-  }, []);
 
   useEffect(() => {
     const fetchDevice = async () => {
@@ -63,6 +53,11 @@ export default function SettingsPanel() {
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load settings";
+        // hide settings if device not registered yet
+        if (message.toLowerCase().includes("not found")) {
+          setDevice(null);
+          return;
+        }
         addToast({ message, type: "error" });
       } finally {
         setLoading(false);
@@ -70,14 +65,6 @@ export default function SettingsPanel() {
     };
     fetchDevice();
   }, [addToast]);
-
-  useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
-
-  const toggleTheme = (next: "light" | "dark") => {
-    setTheme(next);
-  };
 
   const saveSettings = async () => {
     if (!device) return;
@@ -103,13 +90,14 @@ export default function SettingsPanel() {
     }
   };
 
-  if (loading || !device) {
+  if (loading) {
     return (
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
         Loading settings…
       </div>
     );
   }
+  if (!device) return null;
 
   return (
     <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
@@ -137,29 +125,6 @@ export default function SettingsPanel() {
             onChange={(e) => setDevice({ ...device, showStatusSource: e.target.checked })}
           />
         </label>
-        <div className="flex items-center justify-between gap-3 text-sm text-zinc-800 dark:text-zinc-100">
-          <span>Theme</span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => toggleTheme("light")}
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                theme === "light" ? "bg-black text-white" : "bg-zinc-100 text-zinc-800"
-              }`}
-            >
-              Light
-            </button>
-            <button
-              type="button"
-              onClick={() => toggleTheme("dark")}
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                theme === "dark" ? "bg-black text-white" : "bg-zinc-100 text-zinc-800"
-              }`}
-            >
-              Dark
-            </button>
-          </div>
-        </div>
         <label className="flex items-center justify-between gap-3 text-sm text-zinc-800 dark:text-zinc-100">
           <span>Timezone</span>
           <select

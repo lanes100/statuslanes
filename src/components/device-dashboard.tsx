@@ -3,7 +3,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import { ToastShelf, useToast } from "@/components/toast";
-import { applyTheme } from "@/lib/theme";
 
 type Device = {
   deviceId: string;
@@ -56,10 +55,6 @@ export default function DeviceDashboard() {
 
   useEffect(() => {
     fetchDevices();
-    const stored = typeof window !== "undefined" ? localStorage.getItem("theme") : null;
-    if (stored === "dark" || stored === "light") {
-      applyTheme(stored);
-    }
   }, [fetchDevices]);
 
   const device = useMemo(() => {
@@ -269,7 +264,7 @@ export default function DeviceDashboard() {
                   disabled={isPending}
                   className={`rounded-xl px-3 py-3 text-sm font-semibold shadow-sm transition ${
                     isActive
-                      ? "bg-black text-white"
+                      ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-50"
                       : "bg-zinc-100 text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
                   } ${isPending ? "opacity-70" : ""}`}
                   style={{ minHeight: 56 }}
