@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import { ToastShelf, useToast } from "@/components/toast";
 
@@ -29,16 +29,21 @@ export default function DeviceDashboard() {
   const [editableStatuses, setEditableStatuses] = useState<Device["statuses"]>([]);
   const [savingStatuses, setSavingStatuses] = useState(false);
   const { toasts, addToast, removeToast } = useToast();
+  const lastDevicesRef = useRef<Device[] | null>(null);
 
-  const fetchDevices = useCallback(async () => {
+  const fetchDevices = useCallback(async (opts?: { silent?: boolean }) => {
     try {
-      setState({ status: "loading" });
-      // For now, assume a single device; if none, API returns 404.
+      if (!opts?.silent) {
+        setState({ status: "loading" });
+      }
       const json = await apiFetch<{ device: Device }>("/api/device");
+      lastDevicesRef.current = [json.device];
       setState({ status: "ready", devices: [json.device] });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to load devices";
-      setState({ status: "error", message });
+      if (!opts?.silent) {
+        setState({ status: "error", message });
+      }
       addToast({ message, type: "error" });
     }
   }, [addToast]);
@@ -67,7 +72,7 @@ export default function DeviceDashboard() {
         body: JSON.stringify({ deviceId: device.deviceId, statusKey, statusLabel, statusSource: "Web App" }),
       });
       addToast({ message: `Status set to ${statusLabel}`, type: "success" });
-      await fetchDevices();
+      await fetchDevices({ silent: true });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to set status";
       addToast({ message, type: "error" });

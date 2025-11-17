@@ -43,8 +43,8 @@ export function ToastShelf({ toasts, onClose }: { toasts: Toast[]; onClose: (id:
   if (!toasts.length) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4 sm:bottom-6">
-      <div className="flex w-full max-w-md flex-col gap-2">
+    <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-6 sm:bottom-8">
+      <div className="flex w-full max-w-lg flex-col gap-3">
         {toasts.map((toast) => {
           const color =
             toast.type === "error"
