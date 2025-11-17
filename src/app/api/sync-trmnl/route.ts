@@ -34,11 +34,19 @@ async function fetchTrmnlStatuses(webhookUrl: string): Promise<TrmnlStatusResult
     throw new Error("No merge_variables found");
   }
 
+  const activeKeyRaw = (mv as Record<string, unknown>)["status_key"];
+  const activeLabelRaw = (mv as Record<string, unknown>)["status_label"];
+  const activeKey = typeof activeKeyRaw === "number" ? activeKeyRaw : Number(activeKeyRaw);
+  const activeLabel =
+    typeof activeLabelRaw === "string" && activeLabelRaw.trim().length > 0 ? activeLabelRaw.trim().slice(0, 60) : null;
+
   let resolvedCount = 0;
   const statuses = defaultStatuses.map((s) => {
     const label = (mv as Record<string, unknown>)[`status_${s.key}_label`];
-    const nextLabel =
-      typeof label === "string" && label.trim().length > 0 ? label.trim().slice(0, 60) : s.label;
+    const nextFromField =
+      typeof label === "string" && label.trim().length > 0 ? label.trim().length > 60 ? label.trim().slice(0, 60) : label.trim() : null;
+    const fallbackFromActive = activeKey === s.key && activeLabel ? activeLabel : null;
+    const nextLabel = nextFromField || fallbackFromActive || s.label;
     if (nextLabel !== s.label) resolvedCount += 1;
     return {
       ...s,
