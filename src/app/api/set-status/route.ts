@@ -26,6 +26,9 @@ export async function POST(request: Request) {
     if (!deviceId || !statusKey) {
       return NextResponse.json({ error: "Missing deviceId or statusKey" }, { status: 400 });
     }
+    if (!Number.isInteger(statusKey) || statusKey < 1 || statusKey > 12) {
+      return NextResponse.json({ error: "Invalid statusKey" }, { status: 400 });
+    }
 
     const ref = adminDb.collection("devices").doc(deviceId);
     const snapshot = await ref.get();

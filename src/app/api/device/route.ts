@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import { decrypt } from "@/lib/crypto";
 import { cookies } from "next/headers";
 
 const SESSION_COOKIE_NAME = "statuslanes_session";
@@ -74,7 +75,7 @@ export async function PATCH(request: Request) {
         label: typeof s.label === "string" ? s.label.slice(0, 60) : "",
         enabled: Boolean(s.enabled),
       }))
-      .filter((s) => Number.isInteger(s.key) && s.key >= 1 && s.key <= 10 && s.label.trim().length > 0);
+      .filter((s) => Number.isInteger(s.key) && s.key >= 1 && s.key <= 12 && s.label.trim().length > 0);
 
     if (sanitized.length === 0) {
       return NextResponse.json({ error: "No valid statuses provided" }, { status: 400 });

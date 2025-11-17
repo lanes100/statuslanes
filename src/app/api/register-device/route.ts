@@ -5,9 +5,24 @@ import { encrypt } from "@/lib/crypto";
 
 const SESSION_COOKIE_NAME = "statuslanes_session";
 
-const defaultStatuses = Array.from({ length: 10 }).map((_, idx) => ({
+const defaultLabels = [
+  "in the office 🏢",
+  "in a meeting 👥",
+  "working remotely 🏠",
+  "busy, do not disturb 🔕",
+  "out of the office 🌴",
+  "at lunch 🍽️",
+  "Status 7",
+  "Status 8",
+  "Status 9",
+  "Status 10",
+  "Status 11",
+  "Status 12",
+];
+
+const defaultStatuses = defaultLabels.map((label, idx) => ({
   key: idx + 1,
-  label: `Status ${idx + 1}`,
+  label,
   enabled: true,
 }));
 
