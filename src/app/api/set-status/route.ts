@@ -21,12 +21,13 @@ export async function POST(request: Request) {
     const body = await request.json();
     const deviceId = body?.deviceId as string | undefined;
     const statusKey = body?.statusKey as number | undefined;
-    const statusLabel = (body?.statusLabel as string | undefined) ?? `Status ${statusKey ?? ""}`;
+    const statusLabel = (body?.statusLabel as string | undefined)?.trim();
+    const statusSource = (body?.statusSource as string | undefined) ?? "Web App";
 
-    if (!deviceId || !statusKey) {
-      return NextResponse.json({ error: "Missing deviceId or statusKey" }, { status: 400 });
+    if (!deviceId || !statusLabel) {
+      return NextResponse.json({ error: "Missing deviceId or statusLabel" }, { status: 400 });
     }
-    if (!Number.isInteger(statusKey) || statusKey < 1 || statusKey > 12) {
+    if (statusKey !== undefined && (!Number.isInteger(statusKey) || statusKey < 1 || statusKey > 12)) {
       return NextResponse.json({ error: "Invalid statusKey" }, { status: 400 });
     }
 
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
 
     const updatedAt = Date.now();
     await ref.update({
-      activeStatusKey: statusKey,
+      activeStatusKey: statusKey ?? null,
       activeStatusLabel: statusLabel,
       updatedAt,
     });
@@ -53,10 +54,10 @@ export async function POST(request: Request) {
     }
 
     const webhookUrl = decrypt(webhookUrlEncrypted);
-    // Send only the key; TRMNL resolves labels from plugin fields.
     const payload = {
       merge_variables: {
-        status_key: statusKey,
+        status_text: statusLabel,
+        status_source: statusSource,
         updated_at: new Date(updatedAt).toISOString(),
       },
     };

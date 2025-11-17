@@ -100,9 +100,11 @@ export async function PATCH(request: Request) {
     if (webhookUrlEncrypted) {
       const webhookUrl = decrypt(webhookUrlEncrypted);
       const labelPayload: Record<string, string> = {};
-      sanitized.forEach((s) => {
-        labelPayload[`status_${s.key}_label`] = s.label;
-      });
+      sanitized
+        .filter((s) => s.key >= 1 && s.key <= 10)
+        .forEach((s) => {
+          labelPayload[`status_${s.key}_label`] = s.label;
+        });
       try {
         await fetch(webhookUrl, {
           method: "POST",

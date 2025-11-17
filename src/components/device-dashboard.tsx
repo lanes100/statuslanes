@@ -64,7 +64,7 @@ export default function DeviceDashboard() {
     try {
       await apiFetch("/api/set-status", {
         method: "POST",
-        body: JSON.stringify({ deviceId: device.deviceId, statusKey, statusLabel }),
+        body: JSON.stringify({ deviceId: device.deviceId, statusKey, statusLabel, statusSource: "Web App" }),
       });
       addToast({ message: `Status set to ${statusLabel}`, type: "success" });
       await fetchDevices();

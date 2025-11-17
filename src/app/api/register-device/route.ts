@@ -118,6 +118,26 @@ export async function POST(request: Request) {
         updatedAt: now,
       });
 
+    // Push initial labels (1-10) to TRMNL
+    try {
+      const labelPayload: Record<string, string> = {};
+      defaultStatuses
+        .filter((s) => s.key >= 1 && s.key <= 10)
+        .forEach((s) => {
+          labelPayload[`status_${s.key}_label`] = s.label;
+        });
+      await fetch(resolvedWebhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          merge_variables: labelPayload,
+          merge_strategy: "deep_merge",
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to push initial labels to TRMNL", err);
+    }
+
     return NextResponse.json({ deviceId }, { status: 200 });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "UNAUTHENTICATED") {
