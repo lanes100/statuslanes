@@ -87,21 +87,22 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-zinc-100" htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-50 shadow-sm focus:border-white focus:outline-none focus:ring-2 focus:ring-white/10"
-              disabled={mode === "forgot"}
-            />
-          </div>
+          {mode !== "forgot" && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-zinc-100" htmlFor="password">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-50 shadow-sm focus:border-white focus:outline-none focus:ring-2 focus:ring-white/10"
+              />
+            </div>
+          )}
 
           {mode !== "forgot" && (
             <button
