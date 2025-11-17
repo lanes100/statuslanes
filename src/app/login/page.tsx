@@ -26,9 +26,16 @@ export default function LoginPage() {
 
     try {
       const auth = getFirebaseAuth();
+      const appUrl =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
       if (mode === "forgot") {
-        await sendPasswordResetEmail(auth, email);
-        setError("Password reset email sent. Check your inbox.");
+        await sendPasswordResetEmail(auth, email, {
+          url: `${appUrl}/reset-password`,
+          handleCodeInApp: true,
+        });
+        setError("Password reset email sent. Check your inbox (spam too).");
         setLoading(false);
         return;
       }
