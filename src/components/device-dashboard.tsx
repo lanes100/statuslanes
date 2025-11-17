@@ -108,18 +108,19 @@ export default function DeviceDashboard() {
       <div className="flex flex-col gap-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
         <div className="font-semibold text-amber-900">Register your TRMNL plugin</div>
         <p className="text-amber-900">
-          Paste the TRMNL plugin ID (UUID) from your custom plugin settings.
+          Paste the TRMNL Plugin UUID from your custom plugin settings.
         </p>
         <form
           className="space-y-3"
           onSubmit={async (e: FormEvent<HTMLFormElement>) => {
             e.preventDefault();
             if (!pluginId.trim()) return;
-            setSavingDevice(true);
+              setSavingDevice(true);
             try {
               const body = { pluginId: pluginId.trim(), deviceName: deviceName.trim() || "My TRMNL" };
               await apiFetch("/api/register-device", { method: "POST", body: JSON.stringify(body) });
               setPluginId("");
+              addToast({ message: "Plugin saved", type: "success" });
               fetchDevices();
             } catch (err) {
               const message = err instanceof Error ? err.message : "Failed to register device";
@@ -129,12 +130,12 @@ export default function DeviceDashboard() {
           }}
         >
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-amber-900">Plugin ID</label>
+            <label className="text-xs font-semibold text-amber-900">Plugin UUID</label>
             <input
               value={pluginId}
               onChange={(e) => setPluginId(e.target.value)}
               className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-amber-900 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200"
-              placeholder="0f82288b-ff06-460f-9bc1-3670a3b0796c"
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
               required
             />
           </div>
