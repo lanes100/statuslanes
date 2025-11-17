@@ -56,9 +56,9 @@ export default function SettingsPanel() {
         // hide settings if device not registered yet
         if (message.toLowerCase().includes("not found")) {
           setDevice(null);
-          return;
+        } else {
+          addToast({ message, type: "error" });
         }
-        addToast({ message, type: "error" });
       } finally {
         setLoading(false);
       }
@@ -172,7 +172,7 @@ export default function SettingsPanel() {
       <button
         onClick={saveSettings}
         disabled={saving}
-        className="w-full rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-70"
+        className="w-full rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black shadow-sm transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-70"
       >
         {saving ? "Saving…" : "Save settings"}
       </button>
