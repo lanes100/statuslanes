@@ -8,7 +8,8 @@ const SESSION_COOKIE_NAME = "statuslanes_session";
 
 const getSessionUser = async () => {
   try {
-    const sessionCookie = cookies().get(SESSION_COOKIE_NAME)?.value;
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value;
     if (!sessionCookie) return null;
     const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
     return { email: decoded.email ?? "", uid: decoded.uid };
