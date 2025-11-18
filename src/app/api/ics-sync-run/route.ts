@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
-import ical from "node-ical";
+import ICAL from "ical.js";
 
 type DeviceRecord = {
   deviceId: string;
@@ -43,19 +43,22 @@ export async function POST() {
         }
       }
 
-      let events = [];
+      let vevents: ICAL.Event[] = [];
       try {
-        const data = (await ical.async.fromURL(device.calendarIcsUrl)) as Record<string, ical.VEvent>;
-        events = Object.values(data).filter((e) => e.type === "VEVENT");
+        const icsRes = await fetch(device.calendarIcsUrl);
+        if (!icsRes.ok) throw new Error(`HTTP ${icsRes.status}`);
+        const icsText = await icsRes.text();
+        const jcal = ICAL.parse(icsText);
+        const comp = new ICAL.Component(jcal);
+        vevents = comp.getAllSubcomponents("vevent").map((v) => new ICAL.Event(v));
       } catch (err) {
         console.error("ICS fetch/parse failed", device.deviceId, err);
         continue;
       }
 
-      const upcoming = events.filter((ev: any) => {
-        const start = ev.start ? new Date(ev.start).getTime() : null;
-        const end = ev.end ? new Date(ev.end).getTime() : null;
-        if (!start || !end) return false;
+      const upcoming = vevents.filter((ev) => {
+        const start = ev.startDate.toJSDate().getTime();
+        const end = ev.endDate.toJSDate().getTime();
         return end > now - 5 * 60 * 1000 && start < now + 60 * 60 * 1000;
       });
 
@@ -73,7 +76,7 @@ export async function POST() {
       for (const ev of upcoming) {
         const title = ev.summary ?? "";
         const desc = ev.description ?? "";
-        const isAllDay = ev.datetype === "date" || (!ev.start?.getHours && !ev.end?.getHours);
+        const isAllDay = ev.startDate.isDate;
         if (matchKeyword(title, desc)) {
           chosenKey = device.calendarKeywordStatusKey ?? null;
           break;
