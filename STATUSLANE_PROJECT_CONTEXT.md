@@ -52,4 +52,11 @@ Comprehensive context for coding assistant.
 - Action has `workflow_dispatch` for manual run.
 - Middleware deprecation warning in build; consider migrating to proxy later.
 
+## Recent fixes and defaults
+- TRMNL payloads trimmed to minimal keys (`status_text`, `status_source`, flags, `updated_at`) with `merge_strategy: "replace"` to avoid stale labels/time formats.
+- Manual status sets seed `preferredStatus*` and clear `activeEventEndsAt`; sync flows use preferred/idle fallback and persist `activeEventEndsAt`.
+- Calendar mapping defaults for new devices: video-link detection ON mapped to status key 2 (“in a meeting”), all-day -> key 5 (“out of office”), busy events -> do nothing, idle -> previous manual selection.
+- Settings UI exposes “Previous manual selection” for idle, video mapping select, clearer labels; Google action buttons layout adjusted and light-gray styling.
+- Calendar sync logic stores event end times and extends through back-to-back events with the same mapping (Google bulk/manual/self and ICS bulk/self) to avoid dropping status between consecutive meetings.
+
 ## End of file
