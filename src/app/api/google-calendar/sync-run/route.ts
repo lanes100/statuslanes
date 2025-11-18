@@ -21,6 +21,12 @@ type DeviceRecord = {
   activeStatusKey?: number | null;
   activeStatusLabel?: string | null;
   lastIcsSyncedAt?: number | null;
+  timezone?: string;
+  dateFormat?: string;
+  timeFormat?: string;
+  showLastUpdated?: boolean;
+  showStatusSource?: boolean;
+  webhookUrlEncrypted?: string;
 };
 
 type GoogleTokenRecord = {
