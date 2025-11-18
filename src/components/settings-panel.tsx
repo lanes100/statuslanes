@@ -52,6 +52,7 @@ export default function SettingsPanel() {
   const { toasts, addToast, removeToast } = useToast();
   const [loadingCalendars, setLoadingCalendars] = useState(false);
   const [calendarLoadError, setCalendarLoadError] = useState<string | null>(null);
+  const [googleLastSynced, setGoogleLastSynced] = useState<number | null>(null);
   const timezones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [];
   const browserTimezone = getBrowserTimezone();
   const browserTimeFormat = detectDeviceTimeFormat();
@@ -121,8 +122,11 @@ export default function SettingsPanel() {
     fetchDevice();
     const fetchGoogleStatus = async () => {
       try {
-        const res = await apiFetch<{ connected: boolean }>("/api/google-calendar/status", { retry: false });
+        const res = await apiFetch<{ connected: boolean; lastSyncedAt: number | null }>("/api/google-calendar/status", {
+          retry: false,
+        });
         setGoogleConnected(res.connected);
+        setGoogleLastSynced(res.lastSyncedAt ?? null);
         if (res.connected) {
           await refreshGoogleCalendars();
         }
@@ -350,6 +354,11 @@ export default function SettingsPanel() {
             >
               {loadingCalendars ? "Refreshing…" : "Refresh calendars"}
             </button>
+          ) : null}
+          {googleConnected && googleLastSynced ? (
+            <span className="text-[11px] text-zinc-600 dark:text-zinc-400">
+              Last synced: {new Date(googleLastSynced).toLocaleString()}
+            </span>
           ) : null}
         </div>
         {googleConnected && googleCalendars.length > 0 ? (

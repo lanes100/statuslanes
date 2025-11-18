@@ -17,6 +17,8 @@ type DeviceRecord = {
   calendarOooStatusKey?: number | null;
   calendarIdleStatusKey?: number | null;
   statuses?: { key: number; label: string; enabled: boolean }[];
+  activeStatusKey?: number | null;
+  activeStatusLabel?: string | null;
 };
 
 type GoogleTokenRecord = {

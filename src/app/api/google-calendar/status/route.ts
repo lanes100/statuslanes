@@ -20,7 +20,7 @@ export async function GET() {
     const tokenDoc = await adminDb.collection("google_tokens").doc(user.uid).get();
     const data = tokenDoc.data();
     const connected = Boolean(data?.refreshToken || data?.accessToken);
-    return NextResponse.json({ connected }, { status: 200 });
+    return NextResponse.json({ connected, lastSyncedAt: data?.lastSyncedAt ?? null }, { status: 200 });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "UNAUTHENTICATED") {
       return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
