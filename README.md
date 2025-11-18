@@ -2,6 +2,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+_Note: This placeholder line exists to force a change for testing sync._ 
+
 First, run the development server:
 
 ```bash
