@@ -587,15 +587,15 @@ export default function SettingsPanel() {
             onClick={async () => {
               try {
                 await apiFetch("/api/sync-trmnl", { method: "POST" });
-                addToast({ message: "Calendar sync queued", type: "success" });
+                addToast({ message: "ICS sync queued", type: "success" });
               } catch (err) {
-                const message = err instanceof Error ? err.message : "Failed to sync calendar";
+                const message = err instanceof Error ? err.message : "Failed to sync ICS calendar";
                 addToast({ message, type: "error" });
               }
             }}
             className="rounded-md bg-zinc-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
           >
-            Sync calendar now
+            Sync ICS calendar now
           </button>
         </div>
       </div>
