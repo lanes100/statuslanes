@@ -348,8 +348,8 @@ export default function SettingsPanel() {
             Connect Google Calendar or paste an ICS feed. Timed events use “Meetings map to”, all-day events use “Out of office map to”, and keyword matches use “Keyword matches map to”.
           </p>
         </div>
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={googleConnected ? undefined : startGoogleConnect}
@@ -385,7 +385,7 @@ export default function SettingsPanel() {
             )}
           </div>
           {googleConnected ? (
-            <div className="flex flex-col items-start gap-2">
+            <div className="flex flex-col items-start gap-3">
               <button
                 type="button"
                 onClick={syncGoogleCalendar}
