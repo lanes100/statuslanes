@@ -37,8 +37,8 @@ export default async function Home() {
           {user ? <UserMenu email={user.email} /> : null}
         </header>
 
-        <main className="flex min-h-0 flex-1 flex-col">
-          <section className="flex flex-1 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <main className="flex min-h-0 flex-1 flex-col pb-4">
+          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             {user ? (
               <DeviceDashboard />
             ) : (
