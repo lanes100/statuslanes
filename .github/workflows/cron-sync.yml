@@ -8,7 +8,15 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    env:
+      SYNC_BASE_URL: ${{ secrets.SYNC_BASE_URL }}
+      SYNC_SECRET: ${{ secrets.SYNC_SECRET }}
     steps:
+      - name: Check required env
+        run: |
+          if [ -z "$SYNC_BASE_URL" ] || [ -z "$SYNC_SECRET" ]; then
+            echo "Missing SYNC_BASE_URL or SYNC_SECRET"; exit 1;
+          fi
       - name: Call google sync
         run: |
           curl -sSf -X POST "$SYNC_BASE_URL/api/google-calendar/sync-run" -H "x-sync-secret: $SYNC_SECRET"
