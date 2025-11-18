@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { adminAuth } from "@/lib/firebaseAdmin";
-import LogoutButton from "@/components/logout-button";
+import UserMenu from "@/components/user-menu";
 import DeviceDashboard from "@/components/device-dashboard";
 import SettingsPanel from "@/components/settings-panel";
 
@@ -35,14 +35,7 @@ export default async function Home() {
               {user ? "Manage your device status from here." : "Sign in to manage your device status."}
             </p>
           </div>
-          {user ? (
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-zinc-100 px-3 py-2 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
-                {user.email}
-              </div>
-              <LogoutButton />
-            </div>
-          ) : null}
+          {user ? <UserMenu email={user.email} /> : null}
         </header>
 
         <main className="flex flex-col gap-6">

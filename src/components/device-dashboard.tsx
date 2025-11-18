@@ -16,6 +16,10 @@ type Device = {
   timezone?: string;
   timeFormat?: string;
   dateFormat?: string;
+  calendarIcsUrl?: string | null;
+  calendarMeetingStatusKey?: number | null;
+  calendarOooStatusKey?: number | null;
+  calendarIdleStatusKey?: number | null;
 };
 
 type FetchState =

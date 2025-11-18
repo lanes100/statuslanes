@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
 import { ToastShelf, useToast } from "@/components/toast";
 
@@ -12,6 +11,30 @@ type DeviceSettings = {
   timezone?: string;
   timeFormat?: string;
   dateFormat?: string;
+  calendarIcsUrl?: string | null;
+  calendarMeetingStatusKey?: number | null;
+  calendarOooStatusKey?: number | null;
+  calendarIdleStatusKey?: number | null;
+  statuses?: { key: number; label: string; enabled: boolean }[];
+};
+
+const getBrowserTimezone = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return undefined;
+  }
+};
+
+const detectDeviceTimeFormat = (): "24h" | "12h" => {
+  try {
+    const formatter = new Intl.DateTimeFormat(undefined, { hour: "numeric" });
+    const parts = formatter.formatToParts(new Date());
+    if (parts.some((p) => p.type === "dayPeriod")) return "12h";
+    return "24h";
+  } catch {
+    return "24h";
+  }
 };
 
 export default function SettingsPanel() {
@@ -20,8 +43,9 @@ export default function SettingsPanel() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const { toasts, addToast, removeToast } = useToast();
-  const router = useRouter();
   const timezones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [];
+  const browserTimezone = getBrowserTimezone();
+  const browserTimeFormat = detectDeviceTimeFormat();
   const timeFormats = [
     { value: "24h", label: "24-hour" },
     { value: "12h", label: "12-hour" },
@@ -31,6 +55,8 @@ export default function SettingsPanel() {
     { value: "DMY", label: "DD/MM/YYYY" },
     { value: "YMD", label: "YYYY-MM-DD" },
   ];
+  const statusOptions =
+    (device?.statuses ?? []).filter((s) => s.enabled && s.label.trim().length > 0 && Number.isInteger(s.key)) || [];
 
   useEffect(() => {
     const fetchDevice = async () => {
@@ -44,15 +70,25 @@ export default function SettingsPanel() {
             timezone?: string;
             timeFormat?: string;
             dateFormat?: string;
+            calendarIcsUrl?: string | null;
+            calendarMeetingStatusKey?: number | null;
+            calendarOooStatusKey?: number | null;
+            calendarIdleStatusKey?: number | null;
+            statuses?: { key: number; label: string; enabled: boolean }[];
           };
         }>("/api/device");
         setDevice({
           deviceId: res.device.deviceId,
           showLastUpdated: res.device.showLastUpdated ?? true,
           showStatusSource: res.device.showStatusSource ?? false,
-          timezone: res.device.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
-          timeFormat: res.device.timeFormat ?? "24h",
+          timezone: res.device.timezone ?? browserTimezone ?? "",
+          timeFormat: res.device.timeFormat ?? browserTimeFormat,
           dateFormat: res.device.dateFormat ?? "MDY",
+          calendarIcsUrl: res.device.calendarIcsUrl ?? null,
+          calendarMeetingStatusKey: res.device.calendarMeetingStatusKey ?? null,
+          calendarOooStatusKey: res.device.calendarOooStatusKey ?? null,
+          calendarIdleStatusKey: res.device.calendarIdleStatusKey ?? null,
+          statuses: res.device.statuses ?? [],
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load settings";
@@ -82,6 +118,10 @@ export default function SettingsPanel() {
           timezone: device.timezone,
           timeFormat: device.timeFormat,
           dateFormat: device.dateFormat,
+          calendarIcsUrl: device.calendarIcsUrl,
+          calendarMeetingStatusKey: device.calendarMeetingStatusKey,
+          calendarOooStatusKey: device.calendarOooStatusKey,
+          calendarIdleStatusKey: device.calendarIdleStatusKey,
         }),
       });
       addToast({ message: "Settings updated", type: "success" });
@@ -189,6 +229,74 @@ export default function SettingsPanel() {
             ))}
           </select>
         </label>
+      </div>
+
+      <div className="space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div>
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Calendar synchronization</h3>
+          <p className="text-xs text-zinc-600 dark:text-zinc-300">
+            Paste an ICS feed to map meetings or out-of-office events to statuses.
+          </p>
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">ICS URL</label>
+          <input
+            type="url"
+            placeholder="https://example.com/calendar.ics"
+            value={device.calendarIcsUrl ?? ""}
+            onChange={(e) => setDevice({ ...device, calendarIcsUrl: e.target.value })}
+            className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-white dark:focus:ring-white/10"
+          />
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">Meetings map to</label>
+            <select
+              value={device.calendarMeetingStatusKey ?? ""}
+              onChange={(e) =>
+                setDevice({ ...device, calendarMeetingStatusKey: e.target.value ? Number(e.target.value) : null })
+              }
+              className="w-full rounded-md border border-zinc-200 px-2 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            >
+              <option value="">Do nothing</option>
+              {statusOptions.map((s) => (
+                <option key={s.key} value={s.key}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">Out of office map to</label>
+            <select
+              value={device.calendarOooStatusKey ?? ""}
+              onChange={(e) => setDevice({ ...device, calendarOooStatusKey: e.target.value ? Number(e.target.value) : null })}
+              className="w-full rounded-md border border-zinc-200 px-2 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            >
+              <option value="">Do nothing</option>
+              {statusOptions.map((s) => (
+                <option key={s.key} value={s.key}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">No events map to</label>
+            <select
+              value={device.calendarIdleStatusKey ?? ""}
+              onChange={(e) => setDevice({ ...device, calendarIdleStatusKey: e.target.value ? Number(e.target.value) : null })}
+              className="w-full rounded-md border border-zinc-200 px-2 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            >
+              <option value="">Do nothing</option>
+              {statusOptions.map((s) => (
+                <option key={s.key} value={s.key}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
       <button

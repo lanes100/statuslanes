@@ -101,6 +101,10 @@ export async function PATCH(request: Request) {
     const timezone = body?.timezone as string | undefined;
     const timeFormat = body?.timeFormat as string | undefined;
     const dateFormat = body?.dateFormat as string | undefined;
+    const calendarIcsUrlRaw = body?.calendarIcsUrl as string | undefined;
+    const calendarMeetingStatusKeyRaw = body?.calendarMeetingStatusKey;
+    const calendarOooStatusKeyRaw = body?.calendarOooStatusKey;
+    const calendarIdleStatusKeyRaw = body?.calendarIdleStatusKey;
     if (typeof timezone === "string") {
       update.timezone = timezone;
     }
@@ -111,13 +115,61 @@ export async function PATCH(request: Request) {
       update.dateFormat = dateFormat;
     }
 
+    let calendarIcsUrl: string | null | undefined;
+    if (typeof calendarIcsUrlRaw === "string") {
+      const trimmed = calendarIcsUrlRaw.trim();
+      if (trimmed.length === 0) {
+        calendarIcsUrl = null;
+      } else {
+        try {
+          const parsed = new URL(trimmed);
+          const protocolAllowed = ["https:", "http:"].includes(parsed.protocol);
+          const looksIcs = parsed.pathname.toLowerCase().endsWith(".ics");
+          if (!protocolAllowed || !looksIcs) {
+            return NextResponse.json({ error: "Calendar URL must be an http(s) .ics link" }, { status: 400 });
+          }
+          calendarIcsUrl = trimmed;
+        } catch {
+          return NextResponse.json({ error: "Invalid calendar URL" }, { status: 400 });
+        }
+      }
+      update.calendarIcsUrl = calendarIcsUrl;
+    }
+
+    const parseStatusKey = (value: unknown, label: string) => {
+      if (value === undefined) return undefined;
+      if (value === null || value === "") return null;
+      const num = Number(value);
+      if (!Number.isInteger(num) || num < 1 || num > 12) {
+        throw new Error(`${label} status must be between 1 and 12`);
+      }
+      return num;
+    };
+
+    try {
+      const meetingKey = parseStatusKey(calendarMeetingStatusKeyRaw, "Meeting");
+      const oooKey = parseStatusKey(calendarOooStatusKeyRaw, "Out of office");
+      const idleKey = parseStatusKey(calendarIdleStatusKeyRaw, "Default");
+
+      if (meetingKey !== undefined) update.calendarMeetingStatusKey = meetingKey;
+      if (oooKey !== undefined) update.calendarOooStatusKey = oooKey;
+      if (idleKey !== undefined) update.calendarIdleStatusKey = idleKey;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Invalid calendar status mapping";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+
     if (
       !update.statuses &&
       !("showLastUpdated" in update) &&
       !("showStatusSource" in update) &&
       !("timezone" in update) &&
       !("timeFormat" in update) &&
-      !("dateFormat" in update)
+      !("dateFormat" in update) &&
+      !("calendarIcsUrl" in update) &&
+      !("calendarMeetingStatusKey" in update) &&
+      !("calendarOooStatusKey" in update) &&
+      !("calendarIdleStatusKey" in update)
     ) {
       return NextResponse.json({ error: "No updates provided" }, { status: 400 });
     }
