@@ -64,7 +64,7 @@ export async function POST() {
     }
 
     const now = Date.now();
-    // Expire any stored active event that has passed
+    // expire any tracked event end before processing current list
     if (device.activeEventEndsAt && now >= device.activeEventEndsAt) {
       const fallbackKey =
         (device.calendarIdleUsePreferred && device.preferredStatusKey) ||
@@ -152,6 +152,31 @@ export async function POST() {
         chosenEndsAt = endTs;
         break;
       }
+    }
+
+    if (chosenKey && chosenEndsAt) {
+      let extendedEnd = chosenEndsAt;
+      const grace = 5 * 60 * 1000;
+      for (const ev of upcoming) {
+        const startTs = ev.startDate.toJSDate().getTime();
+        const endTs = ev.endDate.toJSDate().getTime();
+        if (startTs > extendedEnd + grace) continue;
+        const title = ev.summary ?? "";
+        const desc = ev.description ?? "";
+        const isAllDay = ev.startDate.isDate;
+        const videoMatch =
+          device.calendarDetectVideoLinks &&
+          ((ev.location ?? "").match(VIDEO_LINK_RE) || (ev.description ?? "").match(VIDEO_LINK_RE));
+        let keyForEvent: number | null = null;
+        if (matchKeyword(title, desc)) keyForEvent = device.calendarKeywordStatusKey ?? null;
+        else if (videoMatch && device.calendarVideoStatusKey) keyForEvent = device.calendarVideoStatusKey;
+        else if (isAllDay && device.calendarOooStatusKey) keyForEvent = device.calendarOooStatusKey;
+        else if (!isAllDay && device.calendarMeetingStatusKey) keyForEvent = device.calendarMeetingStatusKey;
+        if (keyForEvent === chosenKey && endTs > extendedEnd) {
+          extendedEnd = endTs;
+        }
+      }
+      chosenEndsAt = extendedEnd;
     }
 
     if (!chosenKey) {

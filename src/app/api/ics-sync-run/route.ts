@@ -122,9 +122,10 @@ export async function POST(request: Request) {
         const title = ev.summary ?? "";
         const desc = ev.description ?? "";
         const isAllDay = ev.startDate.isDate;
+        const endTs = ev.endDate.toJSDate().getTime();
         if (matchKeyword(title, desc)) {
           chosenKey = device.calendarKeywordStatusKey ?? null;
-          chosenEndsAt = ev.endDate.toJSDate().getTime();
+          chosenEndsAt = endTs;
           break;
         }
         const videoMatch =
@@ -132,19 +133,44 @@ export async function POST(request: Request) {
           ((ev.location ?? "").match(VIDEO_LINK_RE) || (ev.description ?? "").match(VIDEO_LINK_RE));
         if (videoMatch && device.calendarVideoStatusKey) {
           chosenKey = device.calendarVideoStatusKey;
-          chosenEndsAt = ev.endDate.toJSDate().getTime();
+          chosenEndsAt = endTs;
           break;
         }
         if (isAllDay && device.calendarOooStatusKey) {
           chosenKey = device.calendarOooStatusKey;
-          chosenEndsAt = ev.endDate.toJSDate().getTime();
+          chosenEndsAt = endTs;
           break;
         }
         if (!isAllDay && device.calendarMeetingStatusKey) {
           chosenKey = device.calendarMeetingStatusKey;
-          chosenEndsAt = ev.endDate.toJSDate().getTime();
+          chosenEndsAt = endTs;
           break;
         }
+      }
+
+      if (chosenKey && chosenEndsAt) {
+        let extendedEnd = chosenEndsAt;
+        const grace = 5 * 60 * 1000;
+        for (const ev of upcoming) {
+          const startTs = ev.startDate.toJSDate().getTime();
+          const endTs = ev.endDate.toJSDate().getTime();
+          if (startTs > extendedEnd + grace) continue;
+          const title = ev.summary ?? "";
+          const desc = ev.description ?? "";
+          const isAllDay = ev.startDate.isDate;
+          const videoMatch =
+            device.calendarDetectVideoLinks &&
+            ((ev.location ?? "").match(VIDEO_LINK_RE) || (ev.description ?? "").match(VIDEO_LINK_RE));
+          let keyForEvent: number | null = null;
+          if (matchKeyword(title, desc)) keyForEvent = device.calendarKeywordStatusKey ?? null;
+          else if (videoMatch && device.calendarVideoStatusKey) keyForEvent = device.calendarVideoStatusKey;
+          else if (isAllDay && device.calendarOooStatusKey) keyForEvent = device.calendarOooStatusKey;
+          else if (!isAllDay && device.calendarMeetingStatusKey) keyForEvent = device.calendarMeetingStatusKey;
+          if (keyForEvent === chosenKey && endTs > extendedEnd) {
+            extendedEnd = endTs;
+          }
+        }
+        chosenEndsAt = extendedEnd;
       }
 
       if (!chosenKey) {

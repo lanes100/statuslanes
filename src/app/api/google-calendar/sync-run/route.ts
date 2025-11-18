@@ -150,17 +150,24 @@ export async function POST(request: Request) {
             return keywordList.some((k) => hay.includes(k));
           }
         : () => false;
+      const eventsWithTimes = upcoming
+        .map((ev) => {
+          const startRaw = ev.start?.dateTime ?? ev.start?.date ?? null;
+          const endRaw = ev.end?.dateTime ?? ev.end?.date ?? null;
+          const startTs = startRaw ? new Date(startRaw).getTime() : null;
+          const endTs = endRaw ? new Date(endRaw).getTime() : null;
+          return { ev, startTs, endTs };
+        })
+        .filter((e) => e.startTs !== null && e.endTs !== null);
       let chosenKey: number | null = null;
       let chosenLabel: string | null = null;
       let chosenEndsAt: number | null = null;
 
       // Basic priority: keyword > video-link > OOO (all-day?) > timed/busy > idle
-      for (const ev of upcoming) {
+      for (const { ev, endTs } of eventsWithTimes) {
         const title = ev.summary ?? "";
         const desc = ev.description ?? "";
         const isAllDay = Boolean(ev.start?.date);
-        const endRaw = ev.end?.dateTime ?? ev.end?.date ?? null;
-        const endTs = endRaw ? new Date(endRaw).getTime() : null;
         const videoMatch =
           device.calendarDetectVideoLinks &&
           ((ev.location ?? "").match(VIDEO_LINK_RE) || (ev.description ?? "").match(VIDEO_LINK_RE));
@@ -184,6 +191,31 @@ export async function POST(request: Request) {
           chosenEndsAt = endTs;
           break;
         }
+      }
+
+      // Extend through back-to-back events with the same mapping to avoid mid-meeting flips
+      if (chosenKey && chosenEndsAt) {
+        let extendedEnd = chosenEndsAt;
+        const grace = 5 * 60 * 1000;
+        for (const { ev, startTs, endTs } of eventsWithTimes) {
+          if (startTs === null || endTs === null) continue;
+          if (startTs > extendedEnd + grace) continue;
+          const title = ev.summary ?? "";
+          const desc = ev.description ?? "";
+          const isAllDay = Boolean(ev.start?.date);
+          const videoMatch =
+            device.calendarDetectVideoLinks &&
+            ((ev.location ?? "").match(VIDEO_LINK_RE) || (ev.description ?? "").match(VIDEO_LINK_RE));
+          let keyForEvent: number | null = null;
+          if (matchKeyword(title, desc)) keyForEvent = device.calendarKeywordStatusKey ?? null;
+          else if (videoMatch && device.calendarVideoStatusKey) keyForEvent = device.calendarVideoStatusKey;
+          else if (isAllDay && device.calendarOooStatusKey) keyForEvent = device.calendarOooStatusKey;
+          else if (!isAllDay && device.calendarMeetingStatusKey) keyForEvent = device.calendarMeetingStatusKey;
+          if (keyForEvent === chosenKey && endTs > extendedEnd) {
+            extendedEnd = endTs;
+          }
+        }
+        chosenEndsAt = extendedEnd;
       }
 
       if (!chosenKey) {
