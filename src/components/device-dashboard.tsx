@@ -49,7 +49,9 @@ export default function DeviceDashboard() {
       if (!opts?.silent) {
         setState({ status: "error", message });
       }
-      addToast({ message, type: "error" });
+      if (!/not found/i.test(message)) {
+        addToast({ message, type: "error" });
+      }
     }
   }, [addToast]);
 
