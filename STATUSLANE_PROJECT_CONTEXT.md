@@ -434,16 +434,19 @@ Stored in `webhook_url_encrypted`.
 - Firestore (via Firebase Admin) stores devices; middleware redirects unauthenticated users off protected routes.
 - Device registration accepts a TRMNL plugin ID (UUID) and builds the webhook URL internally; webhook URLs are encrypted at rest using `WEBHOOK_SECRET_KEY` (32-byte base64 in env).
 - APIs:
-  - `POST /api/register-device` stores device (default ID `default`), pluginId, encrypted webhook, default statuses.
+  - `POST /api/register-device` stores device (default ID `default`), pluginId, encrypted webhook, default statuses, show_last_updated (on), show_status_source (off), timezone/time/date formats; pushes initial labels + flags to TRMNL.
   - `GET /api/device` returns the first device for the user (or by id).
-  - `POST /api/set-status` updates active status and forwards to TRMNL webhook with retry/backoff.
+  - `PATCH /api/device` updates statuses (up to 12), flags, timezone/time/date formats, and pushes labels + flags to TRMNL (keys 1–10).
+  - `POST /api/set-status` now sends `merge_variables` with `status_text`, `status_source`, `show_last_updated`, `show_status_source`, `timezone`, `time_format`, `date_format`, `updated_at` formatted per user settings; no reliance on status_key.
 - Frontend:
-  - Home shows auth state; device dashboard has a mobile-friendly form to paste plugin ID and status buttons once a device exists.
+  - Home shows auth state; simplified layout; status line reads “I am {status}”; active buttons use lighter selected color; empty statuses hidden.
+  - Device dashboard: edit statuses inline, add up to 12, delete per-row; “Save and close” toggles on the same button; silent fetch reduces flicker.
+  - Settings panel: toggles for show_last_updated/on by default and show_status_source/off by default, timezone picker, time/date format selectors; full dark mode.
+  - Login: full dark mode, forgot-password link sends reset email; new `/reset-password` page verifies oobCode and lets user set a new password; middleware allows `/reset-password`.
   - PWA manifest and icons (`public/icon-192.png`, `icon-512.png`) set for add-to-home-screen.
 - Client UX improvements:
-  - API fetch wrapper with light retry for 429/5xx and toast shelf for inline error/success messaging in the dashboard.
-  - Dashboard now supports editing status labels/enabled flags and saving to Firestore; status set and save actions show success/error toasts.
-- Ops: `.env.local` requires Firebase client/server creds plus `WEBHOOK_SECRET_KEY`; icon assets live in `public/`.
+  - API fetch wrapper with light retry for 429/5xx and toast shelf with improved spacing; error suppressed when settings missing for unregistered device.
+- Ops: `.env.local` requires Firebase client/server creds plus `WEBHOOK_SECRET_KEY`; set `NEXT_PUBLIC_APP_URL` to your deployed URL for reset links; add your domain to Firebase Auth Authorized domains. Icon assets live in `public/`.
 
 ## End of file
 ## End of file

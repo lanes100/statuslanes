@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
 import { ToastShelf, useToast } from "@/components/toast";
 
@@ -17,7 +18,9 @@ export default function SettingsPanel() {
   const [device, setDevice] = useState<DeviceSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const { toasts, addToast, removeToast } = useToast();
+  const router = useRouter();
   const timezones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [];
   const timeFormats = [
     { value: "24h", label: "24-hour" },
@@ -87,6 +90,24 @@ export default function SettingsPanel() {
       addToast({ message, type: "error" });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const removeDevice = async () => {
+    if (!device) return;
+    const confirmed = window.confirm("This will remove your TRMNL device from Statuslanes. You can re-register it afterwards.");
+    if (!confirmed) return;
+    setDeleting(true);
+    try {
+      await apiFetch("/api/device?id=" + encodeURIComponent(device.deviceId), { method: "DELETE" });
+      addToast({ message: "Device removed. Register again to reconnect.", type: "success" });
+      setDevice(null);
+      router.refresh();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to remove device";
+      addToast({ message, type: "error" });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -176,6 +197,24 @@ export default function SettingsPanel() {
       >
         {saving ? "Saving…" : "Save settings"}
       </button>
+
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900 shadow-sm dark:border-red-800 dark:bg-red-950/40 dark:text-red-100">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1 text-sm">
+            <p className="font-semibold">Remove device</p>
+            <p className="text-xs text-red-800 dark:text-red-200/80">
+              This deletes the saved TRMNL plugin for this account so you can set it up again.
+            </p>
+          </div>
+          <button
+            onClick={removeDevice}
+            disabled={deleting}
+            className="rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {deleting ? "Removing…" : "Remove"}
+          </button>
+        </div>
+      </div>
 
       <ToastShelf toasts={toasts} onClose={removeToast} />
     </div>

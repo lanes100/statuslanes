@@ -170,3 +170,31 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Failed to update statuses" }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const user = await requireUser();
+    const { searchParams } = new URL(request.url);
+    const deviceId = searchParams.get("id") ?? "default";
+
+    const ref = adminDb.collection("devices").doc(deviceId);
+    const snap = await ref.get();
+    if (!snap.exists) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const data = snap.data();
+    if (!data || data.userId !== user.uid) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    await ref.delete();
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === "UNAUTHENTICATED") {
+      return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
+    }
+    console.error("device delete error", error);
+    return NextResponse.json({ error: "Failed to remove device" }, { status: 500 });
+  }
+}
