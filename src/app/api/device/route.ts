@@ -235,25 +235,14 @@ export async function PATCH(request: Request) {
     const webhookUrlEncrypted = data.webhookUrlEncrypted as string | undefined;
     if (webhookUrlEncrypted) {
       const webhookUrl = decrypt(webhookUrlEncrypted);
-      const labelPayload: Record<string, string> = {};
-      const statusesForPush = sanitized.length > 0 ? sanitized : (refreshedData?.statuses as StatusInput[] | undefined) ?? [];
-      statusesForPush
-        .filter((s) => s.key >= 1 && s.key <= 10)
-        .forEach((s) => {
-          labelPayload[`status_${s.key}_label`] = s.label;
-        });
       try {
         await fetch(webhookUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             merge_variables: {
-              ...labelPayload,
               show_last_updated: typeof showLastUpdated === "boolean" ? showLastUpdated : data.showLastUpdated ?? true,
-              show_status_source: typeof showStatusSource === "boolean" ? showStatusSource : data.showStatusSource ?? true,
-              timezone: timezone ?? data.timezone,
-              time_format: timeFormat ?? data.timeFormat,
-              date_format: dateFormat ?? data.dateFormat,
+              show_status_source: typeof showStatusSource === "boolean" ? showStatusSource : data.showStatusSource ?? false,
             },
             merge_strategy: "deep_merge",
           }),

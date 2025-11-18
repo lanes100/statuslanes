@@ -118,6 +118,7 @@ export async function POST(request: Request) {
         calendarOooStatusKey: null,
         calendarIdleStatusKey: null,
         calendarIdleUsePreferred: false,
+        activeEventEndsAt: null,
         calendarKeywords: [],
         calendarKeywordStatusKey: null,
         calendarIds: [],
@@ -129,25 +130,15 @@ export async function POST(request: Request) {
         updatedAt: now,
       });
 
-    // Push initial labels (1-10) to TRMNL
+    // Push initial flags to TRMNL
     try {
-      const labelPayload: Record<string, string> = {};
-      defaultStatuses
-        .filter((s) => s.key >= 1 && s.key <= 10)
-        .forEach((s) => {
-          labelPayload[`status_${s.key}_label`] = s.label;
-        });
       await fetch(resolvedWebhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           merge_variables: {
-            ...labelPayload,
             show_last_updated: true,
             show_status_source: false,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            time_format: "24h",
-            date_format: "MDY",
           },
           merge_strategy: "deep_merge",
         }),

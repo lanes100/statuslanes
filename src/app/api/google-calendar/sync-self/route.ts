@@ -33,6 +33,7 @@ type DeviceRecord = {
   preferredStatusKey?: number | null;
   preferredStatusLabel?: string | null;
   calendarIdleUsePreferred?: boolean;
+  activeEventEndsAt?: number | null;
 };
 
 export async function POST() {
@@ -67,6 +68,34 @@ export async function POST() {
     const calendar = getCalendarClient(oauth2Client);
 
     const now = Date.now();
+    if (device.activeEventEndsAt && now >= device.activeEventEndsAt) {
+      const fallbackKey =
+        (device.calendarIdleUsePreferred && device.preferredStatusKey) ||
+        (!device.calendarIdleUsePreferred && device.calendarIdleStatusKey)
+          ? device.calendarIdleUsePreferred
+            ? device.preferredStatusKey
+            : device.calendarIdleStatusKey
+          : device.preferredStatusKey || device.calendarIdleStatusKey || null;
+      if (fallbackKey) {
+        const fallbackLabel =
+          device.statuses?.find((s) => s.key === fallbackKey)?.label ??
+          (fallbackKey === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
+        if (device.activeStatusKey !== fallbackKey || device.activeStatusLabel !== fallbackLabel) {
+          await deviceRef.update({
+            activeStatusKey: fallbackKey,
+            activeStatusLabel: fallbackLabel ?? null,
+            activeEventEndsAt: null,
+            updatedAt: now,
+          });
+          await pushStatusToTrmnl(device, fallbackKey, fallbackLabel ?? "");
+        } else {
+          await deviceRef.update({ activeEventEndsAt: null });
+        }
+      } else {
+        await deviceRef.update({ activeEventEndsAt: null });
+      }
+    }
+
     for (const calId of calendarIds) {
       const listRes = await calendar.events.list({
         calendarId: calId,
@@ -96,56 +125,65 @@ export async function POST() {
       : () => false;
     let chosenKey: number | null = null;
     let chosenLabel: string | null = null;
+    let chosenEndsAt: number | null = null;
 
     for (const ev of upcoming) {
       const title = ev.summary ?? "";
       const desc = ev.description ?? "";
       const isAllDay = Boolean(ev.start?.date);
+      const endRaw = ev.end?.dateTime ?? ev.end?.date ?? null;
+      const endTs = endRaw ? new Date(endRaw).getTime() : null;
       const videoMatch =
         device.calendarDetectVideoLinks &&
         ((ev.location ?? "").match(VIDEO_LINK_RE) || (ev.description ?? "").match(VIDEO_LINK_RE));
       if (matchKeyword(title, desc)) {
         chosenKey = device.calendarKeywordStatusKey ?? null;
+        chosenEndsAt = endTs;
         break;
       }
       if (videoMatch && device.calendarVideoStatusKey) {
         chosenKey = device.calendarVideoStatusKey;
+        chosenEndsAt = endTs;
         break;
       }
       if (isAllDay && device.calendarOooStatusKey) {
         chosenKey = device.calendarOooStatusKey;
+        chosenEndsAt = endTs;
         break;
       }
       if (!isAllDay && device.calendarMeetingStatusKey) {
-          chosenKey = device.calendarMeetingStatusKey;
-          break;
-        }
+        chosenKey = device.calendarMeetingStatusKey;
+        chosenEndsAt = endTs;
+        break;
       }
+    }
 
-      if (!chosenKey) {
-        if (device.calendarIdleUsePreferred && device.preferredStatusKey) {
-          chosenKey = device.preferredStatusKey;
-        } else if (device.calendarIdleStatusKey) {
-          chosenKey = device.calendarIdleStatusKey;
-        } else if (device.preferredStatusKey) {
-          chosenKey = device.preferredStatusKey;
-        }
+    if (!chosenKey) {
+      if (device.calendarIdleUsePreferred && device.preferredStatusKey) {
+        chosenKey = device.preferredStatusKey;
+      } else if (device.calendarIdleStatusKey) {
+        chosenKey = device.calendarIdleStatusKey;
+      } else if (device.preferredStatusKey) {
+        chosenKey = device.preferredStatusKey;
       }
+      chosenEndsAt = null;
+    }
 
-      if (chosenKey) {
-        const label =
-          device.statuses?.find((s) => s.key === chosenKey)?.label ??
-          (chosenKey === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
-        chosenLabel = label;
-        if (device.activeStatusKey !== chosenKey || device.activeStatusLabel !== chosenLabel) {
-          const updatePayload: Record<string, unknown> = {
-            activeStatusKey: chosenKey,
-            activeStatusLabel: chosenLabel,
-            updatedAt: Date.now(),
-          };
-          if (!device.preferredStatusKey && device.activeStatusKey) {
-            updatePayload.preferredStatusKey = device.activeStatusKey;
-            updatePayload.preferredStatusLabel = device.activeStatusLabel ?? null;
+    if (chosenKey) {
+      const label =
+        device.statuses?.find((s) => s.key === chosenKey)?.label ??
+        (chosenKey === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
+      chosenLabel = label;
+      if (device.activeStatusKey !== chosenKey || device.activeStatusLabel !== chosenLabel) {
+        const updatePayload: Record<string, unknown> = {
+          activeStatusKey: chosenKey,
+          activeStatusLabel: chosenLabel,
+          activeEventEndsAt: chosenEndsAt ?? null,
+          updatedAt: Date.now(),
+        };
+        if (!device.preferredStatusKey && device.activeStatusKey) {
+          updatePayload.preferredStatusKey = device.activeStatusKey;
+          updatePayload.preferredStatusLabel = device.activeStatusLabel ?? null;
           }
           await deviceRef.update(updatePayload);
           await pushStatusToTrmnl(device, chosenKey, chosenLabel ?? "");
@@ -183,11 +221,9 @@ async function pushStatusToTrmnl(device: DeviceRecord, statusKey: number | null,
           status_source: "Google Calendar",
           show_last_updated: (device as any).showLastUpdated ?? true,
           show_status_source: (device as any).showStatusSource ?? false,
-          timezone: (device as any).timezone,
-          time_format: (device as any).timeFormat,
-          date_format: (device as any).dateFormat,
           updated_at: timestamp,
         },
+        merge_strategy: "deep_merge",
       }),
     });
   } catch (err) {

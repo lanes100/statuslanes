@@ -22,6 +22,7 @@ type DeviceRecord = {
   preferredStatusKey?: number | null;
   preferredStatusLabel?: string | null;
   calendarIdleUsePreferred?: boolean;
+  activeEventEndsAt?: number | null;
 };
 
 const BATCH_DEVICES = 5;
@@ -76,6 +77,34 @@ export async function POST(request: Request) {
         const end = ev.endDate.toJSDate().getTime();
         return end > now - 5 * 60 * 1000 && start < now + 60 * 60 * 1000;
       });
+      if (device.activeEventEndsAt && now >= device.activeEventEndsAt) {
+        const fallbackKey =
+          (device.calendarIdleUsePreferred && device.preferredStatusKey) ||
+          (!device.calendarIdleUsePreferred && device.calendarIdleStatusKey)
+            ? device.calendarIdleUsePreferred
+              ? device.preferredStatusKey
+              : device.calendarIdleStatusKey
+            : device.preferredStatusKey || device.calendarIdleStatusKey || null;
+        if (fallbackKey) {
+          const fallbackLabel =
+            device.statuses?.find((s) => s.key === fallbackKey)?.label ??
+            (fallbackKey === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
+          if (device.activeStatusKey !== fallbackKey || device.activeStatusLabel !== fallbackLabel) {
+            await doc.ref.update({
+              activeStatusKey: fallbackKey,
+              activeStatusLabel: fallbackLabel ?? null,
+              activeEventEndsAt: null,
+              updatedAt: now,
+              lastIcsSyncedAt: now,
+            });
+            await pushStatusToTrmnl(device, fallbackKey, fallbackLabel ?? "");
+          } else {
+            await doc.ref.update({ activeEventEndsAt: null, lastIcsSyncedAt: now });
+          }
+        } else {
+          await doc.ref.update({ activeEventEndsAt: null, lastIcsSyncedAt: now });
+        }
+      }
 
       const keywordList = (device.calendarKeywords ?? []).map((s) => s.toLowerCase());
       const matchKeyword = device.calendarKeywordStatusKey
@@ -87,6 +116,7 @@ export async function POST(request: Request) {
 
       let chosenKey: number | null = null;
       let chosenLabel: string | null = null;
+      let chosenEndsAt: number | null = null;
 
       for (const ev of upcoming) {
         const title = ev.summary ?? "";
@@ -94,6 +124,7 @@ export async function POST(request: Request) {
         const isAllDay = ev.startDate.isDate;
         if (matchKeyword(title, desc)) {
           chosenKey = device.calendarKeywordStatusKey ?? null;
+          chosenEndsAt = ev.endDate.toJSDate().getTime();
           break;
         }
         const videoMatch =
@@ -101,14 +132,17 @@ export async function POST(request: Request) {
           ((ev.location ?? "").match(VIDEO_LINK_RE) || (ev.description ?? "").match(VIDEO_LINK_RE));
         if (videoMatch && device.calendarVideoStatusKey) {
           chosenKey = device.calendarVideoStatusKey;
+          chosenEndsAt = ev.endDate.toJSDate().getTime();
           break;
         }
         if (isAllDay && device.calendarOooStatusKey) {
           chosenKey = device.calendarOooStatusKey;
+          chosenEndsAt = ev.endDate.toJSDate().getTime();
           break;
         }
         if (!isAllDay && device.calendarMeetingStatusKey) {
           chosenKey = device.calendarMeetingStatusKey;
+          chosenEndsAt = ev.endDate.toJSDate().getTime();
           break;
         }
       }
@@ -121,6 +155,7 @@ export async function POST(request: Request) {
         } else if (device.preferredStatusKey) {
           chosenKey = device.preferredStatusKey;
         }
+        chosenEndsAt = null;
       }
 
       if (chosenKey) {
@@ -134,6 +169,7 @@ export async function POST(request: Request) {
             activeStatusLabel: chosenLabel,
             updatedAt: Date.now(),
             lastIcsSyncedAt: Date.now(),
+            activeEventEndsAt: chosenEndsAt ?? null,
           };
           if (!device.preferredStatusKey && device.activeStatusKey) {
             updatePayload.preferredStatusKey = device.activeStatusKey;
@@ -176,11 +212,9 @@ async function pushStatusToTrmnl(device: DeviceRecord, statusKey: number | null,
           status_source: "ICS",
           show_last_updated: (device as any).showLastUpdated ?? true,
           show_status_source: (device as any).showStatusSource ?? false,
-          timezone: (device as any).timezone,
-          time_format: (device as any).timeFormat,
-          date_format: (device as any).dateFormat,
           updated_at: timestamp,
         },
+        merge_strategy: "deep_merge",
       }),
     });
   } catch (err) {

@@ -53,6 +53,7 @@ export async function POST(request: Request) {
       activeStatusLabel: statusLabel,
       preferredStatusKey: statusKey ?? null,
       preferredStatusLabel: statusLabel,
+      activeEventEndsAt: null,
       updatedAt,
     });
 
@@ -68,11 +69,9 @@ export async function POST(request: Request) {
         status_source: statusSource,
         show_last_updated: data.showLastUpdated ?? true,
         show_status_source: data.showStatusSource ?? false,
-        timezone: data.timezone,
-        time_format: data.timeFormat,
-        date_format: data.dateFormat,
         updated_at: formattedTimestamp,
       },
+      merge_strategy: "deep_merge",
     };
 
     const webhookRes = await sendWebhookWithRetry(webhookUrl, payload);
