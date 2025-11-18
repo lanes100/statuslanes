@@ -50,6 +50,7 @@ export default function SettingsPanel() {
   const [googleCalendars, setGoogleCalendars] = useState<{ id: string; summary: string; primary?: boolean }[]>([]);
   const [calendarSelection, setCalendarSelection] = useState<string[]>([]);
   const { toasts, addToast, removeToast } = useToast();
+  const [loadingCalendars, setLoadingCalendars] = useState(false);
   const timezones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [];
   const browserTimezone = getBrowserTimezone();
   const browserTimeFormat = detectDeviceTimeFormat();
@@ -122,16 +123,7 @@ export default function SettingsPanel() {
         const res = await apiFetch<{ connected: boolean }>("/api/google-calendar/status", { retry: false });
         setGoogleConnected(res.connected);
         if (res.connected) {
-          try {
-            const calRes = await apiFetch<{ calendars: { id: string; summary: string; primary?: boolean }[] }>(
-              "/api/google-calendar/calendars",
-              { retry: false }
-            );
-            setGoogleCalendars(calRes.calendars || []);
-          } catch (err) {
-            console.error("calendar fetch failed", err);
-            setGoogleCalendars([]);
-          }
+          await refreshGoogleCalendars();
         }
       } catch {
         setGoogleConnected(false);
@@ -193,6 +185,22 @@ export default function SettingsPanel() {
       addToast({ message, type: "error" });
     } finally {
       setSyncingGoogle(false);
+    }
+  };
+
+  const refreshGoogleCalendars = async () => {
+    setLoadingCalendars(true);
+    try {
+      const calRes = await apiFetch<{ calendars: { id: string; summary: string; primary?: boolean }[] }>(
+        "/api/google-calendar/calendars",
+        { retry: false }
+      );
+      setGoogleCalendars(calRes.calendars || []);
+    } catch (err) {
+      console.error("calendar fetch failed", err);
+      setGoogleCalendars([]);
+    } finally {
+      setLoadingCalendars(false);
     }
   };
 
@@ -322,6 +330,16 @@ export default function SettingsPanel() {
               className="rounded-md bg-zinc-900 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
             >
               {syncingGoogle ? "Syncing…" : "Sync Google now"}
+            </button>
+          ) : null}
+          {googleConnected ? (
+            <button
+              type="button"
+              onClick={refreshGoogleCalendars}
+              disabled={loadingCalendars}
+              className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-700 dark:hover:bg-zinc-700"
+            >
+              {loadingCalendars ? "Refreshing…" : "Refresh calendars"}
             </button>
           ) : null}
         </div>
