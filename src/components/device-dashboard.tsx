@@ -37,13 +37,18 @@ export default function DeviceDashboard() {
   const [editMode, setEditMode] = useState(false);
   const [editableStatuses, setEditableStatuses] = useState<Device["statuses"]>([]);
   const [savingStatuses, setSavingStatuses] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { toasts, addToast, removeToast } = useToast();
   const lastDevicesRef = useRef<Device[] | null>(null);
 
   const fetchDevices = useCallback(async (opts?: { silent?: boolean }) => {
     try {
       if (!opts?.silent) {
-        setState({ status: "loading" });
+        if (lastDevicesRef.current?.length) {
+          setRefreshing(true);
+        } else {
+          setState({ status: "loading" });
+        }
       }
       const json = await apiFetch<{ device: Device }>("/api/device");
       lastDevicesRef.current = [json.device];
@@ -56,6 +61,8 @@ export default function DeviceDashboard() {
       if (!/not found/i.test(message)) {
         addToast({ message, type: "error" });
       }
+    } finally {
+      setRefreshing(false);
     }
   }, [addToast]);
 
@@ -185,6 +192,9 @@ export default function DeviceDashboard() {
 
   return (
     <div className="space-y-4 text-zinc-900 dark:text-zinc-100">
+      {refreshing ? (
+        <div className="text-xs text-zinc-500 dark:text-zinc-400">Refreshing…</div>
+      ) : null}
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{device.deviceName}</p>

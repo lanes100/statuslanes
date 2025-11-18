@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { adminAuth } from "@/lib/firebaseAdmin";
 import UserMenu from "@/components/user-menu";
 import DeviceDashboard from "@/components/device-dashboard";
-import SettingsPanel from "@/components/settings-panel";
 
 const SESSION_COOKIE_NAME = "statuslanes_session";
 
@@ -54,8 +53,6 @@ export default async function Home() {
               </div>
             )}
           </section>
-
-          {user ? <SettingsPanel /> : null}
         </main>
       </div>
     </div>

@@ -12,12 +12,6 @@ const defaultLabels = [
   "busy, do not disturb 🔕",
   "out of the office 🌴",
   "at lunch 🍽️",
-  "Status 7",
-  "Status 8",
-  "Status 9",
-  "Status 10",
-  "Status 11",
-  "Status 12",
 ];
 
 const defaultStatuses = defaultLabels.map((label, idx) => ({
