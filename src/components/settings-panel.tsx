@@ -138,7 +138,17 @@ export default function SettingsPanel() {
     fetchGoogleStatus();
   }, [addToast]);
 
-  const saveSettings = async () => {
+  // Auto-save settings on change (with debounce)
+  useEffect(() => {
+    if (!device || loading) return;
+    const handle = setTimeout(() => {
+      saveSettings(true);
+    }, 600);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [device, calendarSelection]);
+
+  const saveSettings = async (silent?: boolean) => {
     if (!device) return;
     setSaving(true);
     try {
@@ -160,7 +170,9 @@ export default function SettingsPanel() {
           calendarIds: calendarSelection,
         }),
       });
-      addToast({ message: "Settings updated", type: "success" });
+      if (!silent) {
+        addToast({ message: "Settings updated", type: "success" });
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to update settings";
       addToast({ message, type: "error" });
@@ -528,14 +540,6 @@ export default function SettingsPanel() {
           </button>
         </div>
       </div>
-
-      <button
-        onClick={saveSettings}
-        disabled={saving}
-        className="w-full rounded-lg bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
-      >
-        {saving ? "Saving…" : "Save settings"}
-      </button>
 
       <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900 shadow-sm dark:border-red-800 dark:bg-red-950/40 dark:text-red-100">
         <div className="flex items-start justify-between gap-3">
