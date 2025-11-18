@@ -92,6 +92,26 @@ export default function DeviceDashboard() {
     fetchDevices();
   }, [fetchDevices]);
 
+  // Client-side heartbeat: attempt a user-scoped sync every 5 minutes while active.
+  const heartbeat = useCallback(async () => {
+    try {
+      await apiFetch("/api/google-calendar/sync-self", { method: "POST", retry: false });
+    } catch {
+      // ignore
+    }
+    try {
+      await apiFetch("/api/ics-sync-self", { method: "POST", retry: false });
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    heartbeat();
+    const id = setInterval(heartbeat, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [heartbeat]);
+
   const device = useMemo(() => {
     if (state.status !== "ready") return null;
     return state.devices[0];

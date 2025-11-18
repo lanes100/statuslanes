@@ -20,7 +20,14 @@ type DeviceRecord = {
 
 const BATCH_DEVICES = 5;
 
-export async function POST() {
+export async function POST(request: Request) {
+  const secret = process.env.SYNC_SECRET;
+  if (secret) {
+    const header = request.headers.get("x-sync-secret");
+    if (header !== secret) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
   try {
     const snap = await adminDb
       .collection("devices")
@@ -43,7 +50,7 @@ export async function POST() {
         }
       }
 
-      let vevents: ICAL.Event[] = [];
+      let vevents: any[] = [];
       try {
         const icsRes = await fetch(device.calendarIcsUrl);
         if (!icsRes.ok) throw new Error(`HTTP ${icsRes.status}`);

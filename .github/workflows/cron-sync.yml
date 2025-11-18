@@ -1,0 +1,17 @@
+name: Calendar Sync
+
+on:
+  schedule:
+    - cron: "*/15 * * * *" # every 15 minutes
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call google sync
+        run: |
+          curl -sSf -X POST "$SYNC_BASE_URL/api/google-calendar/sync-run" -H "x-sync-secret: $SYNC_SECRET"
+      - name: Call ics sync
+        run: |
+          curl -sSf -X POST "$SYNC_BASE_URL/api/ics-sync-run" -H "x-sync-secret: $SYNC_SECRET"

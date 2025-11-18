@@ -36,7 +36,14 @@ type GoogleTokenRecord = {
 
 const BATCH_USERS = 5;
 
-export async function POST() {
+export async function POST(request: Request) {
+  const secret = process.env.SYNC_SECRET;
+  if (secret) {
+    const header = request.headers.get("x-sync-secret");
+    if (header !== secret) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
   try {
     const tokenSnap = await adminDb.collection("google_tokens").limit(BATCH_USERS).get();
     const now = Date.now();
