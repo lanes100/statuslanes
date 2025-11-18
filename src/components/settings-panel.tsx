@@ -19,6 +19,7 @@ type DeviceSettings = {
   calendarKeywords?: string[];
   calendarIds?: string[];
   calendarKeywordStatusKey?: number | null;
+  calendarDetectVideoLinks?: boolean;
 };
 
 const getBrowserTimezone = () => {
@@ -333,7 +334,7 @@ export default function SettingsPanel() {
         <div>
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Calendar synchronization</h3>
           <p className="text-xs text-zinc-600 dark:text-zinc-300">
-            Connect Google Calendar or paste an ICS feed to map meetings, OOO, or keyword matches to your statuses.
+            Connect Google Calendar or paste an ICS feed. Timed events use “Meetings map to”, all-day events use “Out of office map to”, and keyword matches use “Keyword matches map to”.
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
@@ -452,7 +453,7 @@ export default function SettingsPanel() {
             className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-white dark:focus:ring-white/10"
           />
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            If an event title/description contains any keyword, it will use your calendar mapping.
+            Checked against title and description; add as many keywords as you need.
           </p>
         </div>
         <div className="space-y-1">
@@ -471,6 +472,20 @@ export default function SettingsPanel() {
           </select>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
             When any keyword is found in an event, use this status override.
+          </p>
+        </div>
+        <div className="space-y-1">
+          <label className="flex items-center gap-3 text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+            <span>Detect video conference links as meetings</span>
+            <input
+              type="checkbox"
+              className="h-4 w-4"
+              checked={device.calendarDetectVideoLinks ?? false}
+              onChange={(e) => setDevice({ ...device, calendarDetectVideoLinks: e.target.checked })}
+            />
+          </label>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Looks for Zoom/Teams/Meet/Webex/etc links in event details and applies “Meetings map to”.
           </p>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

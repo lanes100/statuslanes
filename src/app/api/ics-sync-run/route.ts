@@ -17,6 +17,7 @@ type DeviceRecord = {
   activeStatusKey?: number | null;
   activeStatusLabel?: string | null;
   lastIcsSyncedAt?: number | null;
+  calendarDetectVideoLinks?: boolean;
 };
 
 const BATCH_DEVICES = 5;

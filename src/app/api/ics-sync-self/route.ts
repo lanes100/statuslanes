@@ -29,6 +29,7 @@ type DeviceRecord = {
   statuses?: { key: number; label: string; enabled: boolean }[];
   activeStatusKey?: number | null;
   activeStatusLabel?: string | null;
+  calendarDetectVideoLinks?: boolean;
 };
 
 export async function POST() {
