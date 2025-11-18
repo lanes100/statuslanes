@@ -10,7 +10,14 @@ function getOAuthClient() {
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const redirectUri = process.env.GOOGLE_REDIRECT_URI;
   if (!clientId || !clientSecret || !redirectUri) {
-    throw new Error("Google OAuth env vars missing");
+    const missing = [
+      !clientId ? "GOOGLE_CLIENT_ID" : null,
+      !clientSecret ? "GOOGLE_CLIENT_SECRET" : null,
+      !redirectUri ? "GOOGLE_REDIRECT_URI" : null,
+    ]
+      .filter(Boolean)
+      .join(", ");
+    throw new Error(`Google OAuth env vars missing: ${missing}`);
   }
   return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 }
@@ -45,6 +52,9 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
     }
     console.error("google-calendar/auth error", error);
+    if (error instanceof Error && error.message.includes("Google OAuth env vars missing")) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
     return NextResponse.json({ error: "Failed to start Google auth" }, { status: 500 });
   }
 }

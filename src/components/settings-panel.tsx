@@ -18,6 +18,7 @@ type DeviceSettings = {
   statuses?: { key: number; label: string; enabled: boolean }[];
   calendarKeywords?: string[];
   calendarIds?: string[];
+  calendarKeywordStatusKey?: number | null;
 };
 
 const getBrowserTimezone = () => {
@@ -83,6 +84,7 @@ export default function SettingsPanel() {
             statuses?: { key: number; label: string; enabled: boolean }[];
             calendarKeywords?: string[];
             calendarIds?: string[];
+            calendarKeywordStatusKey?: number | null;
           };
         }>("/api/device");
         setDevice({
@@ -98,6 +100,7 @@ export default function SettingsPanel() {
           calendarIdleStatusKey: res.device.calendarIdleStatusKey ?? null,
           statuses: res.device.statuses ?? [],
           calendarKeywords: res.device.calendarKeywords ?? [],
+          calendarKeywordStatusKey: res.device.calendarKeywordStatusKey ?? null,
           // store selection separately for UI
         });
         setCalendarSelection(res.device.calendarIds ?? []);
@@ -155,6 +158,7 @@ export default function SettingsPanel() {
           calendarOooStatusKey: device.calendarOooStatusKey,
           calendarIdleStatusKey: device.calendarIdleStatusKey,
           calendarKeywords: device.calendarKeywords ?? [],
+          calendarKeywordStatusKey: device.calendarKeywordStatusKey ?? null,
           calendarIds: calendarSelection,
         }),
       });
@@ -375,6 +379,24 @@ export default function SettingsPanel() {
           />
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
             If an event title/description contains any keyword, it will use your calendar mapping.
+          </p>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">Keyword matches map to</label>
+          <select
+            value={device.calendarKeywordStatusKey ?? ""}
+            onChange={(e) => setDevice({ ...device, calendarKeywordStatusKey: e.target.value ? Number(e.target.value) : null })}
+            className="w-full rounded-md border border-zinc-200 px-2 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+          >
+            <option value="">Do nothing</option>
+            {statusOptions.map((s) => (
+              <option key={s.key} value={s.key}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            When any keyword is found in an event, use this status override.
           </p>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
