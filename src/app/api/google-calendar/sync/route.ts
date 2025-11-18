@@ -69,6 +69,8 @@ type DeviceRecord = {
   showLastUpdated?: boolean;
   showStatusSource?: boolean;
   webhookUrlEncrypted?: string;
+  calendarDetectVideoLinks?: boolean;
+  calendarVideoStatusKey?: number | null;
 };
 
 async function runGoogleSyncForUser(device: DeviceRecord, deviceRef: FirebaseFirestore.DocumentReference, tokenData: any) {
@@ -124,8 +126,15 @@ async function runGoogleSyncForUser(device: DeviceRecord, deviceRef: FirebaseFir
       const title = ev.summary ?? "";
       const desc = ev.description ?? "";
       const isAllDay = Boolean(ev.start?.date);
+      const videoMatch =
+        device.calendarDetectVideoLinks &&
+        ((ev.location ?? "").match(VIDEO_LINK_RE) || (ev.description ?? "").match(VIDEO_LINK_RE));
       if (matchKeyword(title, desc)) {
         chosenKey = device.calendarKeywordStatusKey ?? null;
+        break;
+      }
+      if (videoMatch && device.calendarVideoStatusKey) {
+        chosenKey = device.calendarVideoStatusKey;
         break;
       }
       if (isAllDay && device.calendarOooStatusKey) {
@@ -217,3 +226,6 @@ function formatTimestamp(timestamp: number, timezone: string, dateFormat: string
 
   return `${dateStr} ${timeStr}`.trim();
 }
+
+const VIDEO_LINK_RE =
+  /(zoom\.us|teams\.microsoft\.com|meet\.google\.com|webex\.com|gotomeeting\.com|bluejeans\.com|ringcentral\.com|whereby\.com|join\.skype\.com|chime\.aws|hopin\.com|join\.me)/i;

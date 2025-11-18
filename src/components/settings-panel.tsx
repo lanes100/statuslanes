@@ -20,6 +20,7 @@ type DeviceSettings = {
   calendarIds?: string[];
   calendarKeywordStatusKey?: number | null;
   calendarDetectVideoLinks?: boolean;
+  calendarVideoStatusKey?: number | null;
 };
 
 const getBrowserTimezone = () => {
@@ -89,6 +90,8 @@ export default function SettingsPanel() {
             calendarKeywords?: string[];
             calendarIds?: string[];
             calendarKeywordStatusKey?: number | null;
+            calendarVideoStatusKey?: number | null;
+            calendarDetectVideoLinks?: boolean;
           };
         }>("/api/device");
         setDevice({
@@ -105,6 +108,8 @@ export default function SettingsPanel() {
           statuses: res.device.statuses ?? [],
           calendarKeywords: res.device.calendarKeywords ?? [],
           calendarKeywordStatusKey: res.device.calendarKeywordStatusKey ?? null,
+          calendarVideoStatusKey: res.device.calendarVideoStatusKey ?? null,
+          calendarDetectVideoLinks: res.device.calendarDetectVideoLinks ?? false,
           // store selection separately for UI
         });
         setCalendarSelection(res.device.calendarIds ?? []);
@@ -169,6 +174,8 @@ export default function SettingsPanel() {
           calendarKeywords: device.calendarKeywords ?? [],
           calendarKeywordStatusKey: device.calendarKeywordStatusKey ?? null,
           calendarIds: calendarSelection,
+          calendarDetectVideoLinks: device.calendarDetectVideoLinks ?? false,
+          calendarVideoStatusKey: device.calendarVideoStatusKey ?? null,
         }),
       });
       if (!silent) {
@@ -476,7 +483,7 @@ export default function SettingsPanel() {
         </div>
         <div className="space-y-1">
           <label className="flex items-center gap-3 text-xs font-semibold text-zinc-700 dark:text-zinc-200">
-            <span>Detect video conference links as meetings</span>
+            <span>Detect video conference links</span>
             <input
               type="checkbox"
               className="h-4 w-4"
@@ -485,12 +492,29 @@ export default function SettingsPanel() {
             />
           </label>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Looks for Zoom/Teams/Meet/Webex/etc links in event details and applies “Meetings map to”.
+            Looks for Zoom/Teams/Meet/Webex/etc links in event details and applies your video mapping below.
           </p>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">Video links map to</label>
+          <select
+            value={device.calendarVideoStatusKey ?? ""}
+            onChange={(e) => setDevice({ ...device, calendarVideoStatusKey: e.target.value ? Number(e.target.value) : null })}
+            className="w-full rounded-md border border-zinc-200 px-2 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            disabled={!device.calendarDetectVideoLinks}
+          >
+            <option value="">Do nothing</option>
+            {statusOptions.map((s) => (
+              <option key={s.key} value={s.key}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">Only used when a video link is detected.</p>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">Meetings map to</label>
+            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">Busy events map to</label>
             <select
               value={device.calendarMeetingStatusKey ?? ""}
               onChange={(e) =>
@@ -507,7 +531,7 @@ export default function SettingsPanel() {
             </select>
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">Out of office map to</label>
+            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">All day events map to</label>
             <select
               value={device.calendarOooStatusKey ?? ""}
               onChange={(e) => setDevice({ ...device, calendarOooStatusKey: e.target.value ? Number(e.target.value) : null })}
