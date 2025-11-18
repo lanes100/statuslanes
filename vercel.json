@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/google-calendar/sync-run",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/ics-sync-run",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}
