@@ -63,6 +63,8 @@ type DeviceRecord = {
   statuses?: { key: number; label: string; enabled: boolean }[];
   activeStatusKey?: number | null;
   activeStatusLabel?: string | null;
+  preferredStatusKey?: number | null;
+  preferredStatusLabel?: string | null;
   timezone?: string;
   dateFormat?: string;
   timeFormat?: string;
@@ -147,12 +149,16 @@ async function runGoogleSyncForUser(device: DeviceRecord, deviceRef: FirebaseFir
       }
     }
 
-    if (!chosenKey && device.calendarIdleStatusKey) {
+    if (!chosenKey && device.preferredStatusKey) {
+      chosenKey = device.preferredStatusKey;
+    } else if (!chosenKey && device.calendarIdleStatusKey) {
       chosenKey = device.calendarIdleStatusKey;
     }
 
     if (chosenKey) {
-      const label = device.statuses?.find((s) => s.key === chosenKey)?.label ?? null;
+      const label =
+        device.statuses?.find((s) => s.key === chosenKey)?.label ??
+        (chosenKey === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
       chosenLabel = label;
       if (device.activeStatusKey !== chosenKey || device.activeStatusLabel !== chosenLabel) {
         changed = true;

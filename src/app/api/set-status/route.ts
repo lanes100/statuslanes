@@ -51,6 +51,8 @@ export async function POST(request: Request) {
     await ref.update({
       activeStatusKey: statusKey ?? null,
       activeStatusLabel: statusLabel,
+      preferredStatusKey: statusKey ?? null,
+      preferredStatusLabel: statusLabel,
       updatedAt,
     });
 

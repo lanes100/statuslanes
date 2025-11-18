@@ -31,6 +31,8 @@ type DeviceRecord = {
   activeStatusLabel?: string | null;
   calendarDetectVideoLinks?: boolean;
   calendarVideoStatusKey?: number | null;
+  preferredStatusKey?: number | null;
+  preferredStatusLabel?: string | null;
 };
 
 const VIDEO_LINK_RE =
@@ -115,12 +117,16 @@ export async function POST() {
       }
     }
 
-    if (!chosenKey && device.calendarIdleStatusKey) {
+    if (!chosenKey && device.preferredStatusKey) {
+      chosenKey = device.preferredStatusKey;
+    } else if (!chosenKey && device.calendarIdleStatusKey) {
       chosenKey = device.calendarIdleStatusKey;
     }
 
     if (chosenKey) {
-      const label = device.statuses?.find((s) => s.key === chosenKey)?.label ?? null;
+      const label =
+        device.statuses?.find((s) => s.key === chosenKey)?.label ??
+        (chosenKey === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
       chosenLabel = label;
       if (device.activeStatusKey !== chosenKey || device.activeStatusLabel !== chosenLabel) {
         await deviceRef.update({
