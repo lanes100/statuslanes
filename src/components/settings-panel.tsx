@@ -381,7 +381,7 @@ export default function SettingsPanel() {
             </span>
           )}
           {googleConnected ? (
-            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="mt-2 flex flex-col items-start gap-2">
               <button
                 type="button"
                 onClick={syncGoogleCalendar}
@@ -398,15 +398,11 @@ export default function SettingsPanel() {
               >
                 {loadingCalendars ? "Refreshing…" : "Refresh calendars"}
               </button>
+              <div className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                Last synced:{" "}
+                {googleLastSynced ? new Date(googleLastSynced).toLocaleString() : "Not yet synced"}
+              </div>
             </div>
-          ) : null}
-          {googleConnected ? (
-            <span className="text-[11px] text-zinc-600 dark:text-zinc-400">
-              Last synced:{" "}
-              {googleLastSynced
-                ? new Date(googleLastSynced).toLocaleString()
-                : "Not yet synced"}
-            </span>
           ) : null}
         </div>
         {googleConnected && googleCalendars.length > 0 ? (
