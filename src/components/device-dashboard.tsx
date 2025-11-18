@@ -246,19 +246,30 @@ export default function DeviceDashboard() {
           {editMode ? "Save and close" : "Edit statuses"}
         </button>
         {editMode && (
-          <button
-            onClick={() => {
-              setEditableStatuses((prev) => {
-                if (prev.length >= 12) return prev;
-                const nextKey = prev.length + 1;
-                return [...prev, { key: nextKey, label: `Status ${nextKey}`, enabled: true }];
-              });
-            }}
-            className="rounded-full bg-white px-3 py-2 text-xs font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-900 dark:text-zinc-100 dark:ring-zinc-700 dark:hover:bg-zinc-800"
-            disabled={editableStatuses.length >= 12}
-          >
-            + Add status
-          </button>
+          <>
+            <button
+              onClick={() => {
+                setEditableStatuses((prev) => {
+                  if (prev.length >= 12) return prev;
+                  const nextKey = prev.length + 1;
+                  return [...prev, { key: nextKey, label: `Status ${nextKey}`, enabled: true }];
+                });
+              }}
+              className="rounded-full bg-white px-3 py-2 text-xs font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-900 dark:text-zinc-100 dark:ring-zinc-700 dark:hover:bg-zinc-800"
+              disabled={editableStatuses.length >= 12}
+            >
+              + Add status
+            </button>
+            <button
+              onClick={() => {
+                if (device) setEditableStatuses(device.statuses);
+                setEditMode(false);
+              }}
+              className="rounded-full bg-transparent px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
+            >
+              Cancel
+            </button>
+          </>
         )}
       </div>
 
