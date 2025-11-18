@@ -61,7 +61,7 @@ export async function POST() {
       const icsText = await icsRes.text();
       const jcal = ICAL.parse(icsText);
       const comp = new ICAL.Component(jcal);
-      vevents = comp.getAllSubcomponents("vevent").map((v) => new ICAL.Event(v));
+      vevents = comp.getAllSubcomponents("vevent").map((v: any) => new ICAL.Event(v));
     } catch (err) {
       console.error("ICS fetch/parse failed", device.deviceId, err);
       return NextResponse.json({ error: "Failed to fetch ICS" }, { status: 500 });
