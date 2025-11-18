@@ -6,6 +6,8 @@ import { decrypt } from "@/lib/crypto";
 
 const SESSION_COOKIE_NAME = "statuslanes_session";
 
+type CachedEvent = { start: number; end: number; statusKey: number | null };
+
 async function requireUser() {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value;
@@ -38,7 +40,6 @@ export async function POST() {
       return NextResponse.json({ error: "No calendars selected" }, { status: 400 });
     }
 
-    // Run the same logic as bulk sync-run but scoped to this user
     const result = await runGoogleSyncForUser(device, deviceRef, tokenData);
     await ref.update({ manualSyncRequestedAt: Date.now() });
     return NextResponse.json({ synced: true, ...result }, { status: 200 });
@@ -66,6 +67,9 @@ type DeviceRecord = {
   preferredStatusKey?: number | null;
   preferredStatusLabel?: string | null;
   calendarIdleUsePreferred?: boolean;
+  calendarDetectVideoLinks?: boolean;
+  calendarVideoStatusKey?: number | null;
+  calendarCachedEvents?: CachedEvent[];
   activeEventEndsAt?: number | null;
   timezone?: string;
   dateFormat?: string;
@@ -73,8 +77,6 @@ type DeviceRecord = {
   showLastUpdated?: boolean;
   showStatusSource?: boolean;
   webhookUrlEncrypted?: string;
-  calendarDetectVideoLinks?: boolean;
-  calendarVideoStatusKey?: number | null;
 };
 
 async function runGoogleSyncForUser(device: DeviceRecord, deviceRef: FirebaseFirestore.DocumentReference, tokenData: any) {
@@ -95,35 +97,10 @@ async function runGoogleSyncForUser(device: DeviceRecord, deviceRef: FirebaseFir
 
   const now = Date.now();
   let changed = false;
-  // If previous event ended and no sync caught it, expire to idle/preferred before evaluating new events
-  if (device.activeEventEndsAt && now >= device.activeEventEndsAt) {
-    const fallbackKey =
-      (device.calendarIdleUsePreferred && device.preferredStatusKey) ||
-      (!device.calendarIdleUsePreferred && device.calendarIdleStatusKey)
-        ? device.calendarIdleUsePreferred
-          ? device.preferredStatusKey
-          : device.calendarIdleStatusKey
-        : device.preferredStatusKey || device.calendarIdleStatusKey || null;
-    if (fallbackKey) {
-      const fallbackLabel =
-        device.statuses?.find((s) => s.key === fallbackKey)?.label ??
-        (fallbackKey === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
-      if (device.activeStatusKey !== fallbackKey || device.activeStatusLabel !== fallbackLabel) {
-        changed = true;
-        await deviceRef.update({
-          activeStatusKey: fallbackKey,
-          activeStatusLabel: fallbackLabel ?? null,
-          activeEventEndsAt: null,
-          updatedAt: now,
-        });
-        await pushStatusToTrmnl(device, fallbackKey, fallbackLabel ?? "");
-      } else {
-        await deviceRef.update({ activeEventEndsAt: null });
-      }
-    } else {
-      await deviceRef.update({ activeEventEndsAt: null });
-    }
-  }
+
+  await applyCachedEvents(device, deviceRef, now);
+
+  const cacheableEvents: CachedEvent[] = [];
 
   for (const calId of calendarIds) {
     const listRes = await calendar.events.list({
@@ -136,6 +113,8 @@ async function runGoogleSyncForUser(device: DeviceRecord, deviceRef: FirebaseFir
     });
 
     const events = listRes.data.items ?? [];
+    cacheableEvents.push(...mapEventsForCache(events, device));
+
     const upcoming = events.filter((ev) => {
       const start = ev.start?.dateTime ?? ev.start?.date;
       const end = ev.end?.dateTime ?? ev.end?.date;
@@ -236,7 +215,11 @@ async function runGoogleSyncForUser(device: DeviceRecord, deviceRef: FirebaseFir
         device.statuses?.find((s) => s.key === chosenKey)?.label ??
         (chosenKey === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
       chosenLabel = label;
-      if (device.activeStatusKey !== chosenKey || device.activeStatusLabel !== chosenLabel) {
+      if (
+        device.activeStatusKey !== chosenKey ||
+        device.activeStatusLabel !== chosenLabel ||
+        device.activeEventEndsAt !== chosenEndsAt
+      ) {
         changed = true;
         const updatePayload: Record<string, unknown> = {
           activeStatusKey: chosenKey,
@@ -253,6 +236,8 @@ async function runGoogleSyncForUser(device: DeviceRecord, deviceRef: FirebaseFir
       }
     }
   }
+
+  await deviceRef.update({ calendarCachedEvents: buildSameDayCache(cacheableEvents, now) });
 
   return { changed };
 }
@@ -315,3 +300,82 @@ function formatTimestamp(timestamp: number, timezone: string, dateFormat: string
 
 const VIDEO_LINK_RE =
   /(zoom\.us|teams\.microsoft\.com|meet\.google\.com|webex\.com|gotomeeting\.com|bluejeans\.com|ringcentral\.com|whereby\.com|join\.skype\.com|chime\.aws|hopin\.com|join\.me)/i;
+
+function buildSameDayCache(events: { start: number; end: number; statusKey: number | null }[], now: number): CachedEvent[] {
+  const startOfDay = new Date(now).setHours(0, 0, 0, 0);
+  const endOfDay = new Date(now).setHours(23, 59, 59, 999);
+  return events
+    .filter((e) => e.start >= startOfDay && e.start <= endOfDay && e.end >= now)
+    .sort((a, b) => a.start - b.start)
+    .slice(0, 10);
+}
+
+async function applyCachedEvents(device: DeviceRecord, deviceRef: FirebaseFirestore.DocumentReference, now: number) {
+  const cached = (device.calendarCachedEvents ?? []).filter((e) => e.end > now);
+  if (cached.length === 0) {
+    if ((device.calendarCachedEvents?.length ?? 0) > 0) await deviceRef.update({ calendarCachedEvents: [] });
+    return false;
+  }
+  cached.sort((a, b) => a.start - b.start);
+  let chosen: CachedEvent | null = null;
+  for (const ev of cached) {
+    if (now >= ev.start && now <= ev.end) {
+      chosen = ev;
+      break;
+    }
+  }
+  if (!chosen) {
+    await deviceRef.update({ calendarCachedEvents: cached });
+    return false;
+  }
+  const label =
+    device.statuses?.find((s) => s.key === chosen.statusKey)?.label ??
+    (chosen.statusKey === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
+  if (device.activeStatusKey !== chosen.statusKey || device.activeStatusLabel !== label) {
+    await deviceRef.update({
+      activeStatusKey: chosen.statusKey,
+      activeStatusLabel: label ?? null,
+      activeEventEndsAt: chosen.end,
+      calendarCachedEvents: cached,
+      updatedAt: now,
+    });
+    await pushStatusToTrmnl(device, chosen.statusKey, label ?? "");
+    return true;
+  }
+  await deviceRef.update({ calendarCachedEvents: cached });
+  return false;
+}
+
+function mapEventsForCache(events: any[], device: DeviceRecord): CachedEvent[] {
+  const keywordList = (device.calendarKeywords ?? []).map((s) => s.toLowerCase());
+  const matchKeyword = device.calendarKeywordStatusKey
+    ? (title: string, desc: string) => {
+        const hay = `${title} ${desc}`.toLowerCase();
+        return keywordList.some((k) => hay.includes(k));
+      }
+    : () => false;
+
+  const mapped: CachedEvent[] = [];
+  for (const ev of events) {
+    const startRaw = ev.start?.dateTime ?? ev.start?.date;
+    const endRaw = ev.end?.dateTime ?? ev.end?.date;
+    if (!startRaw || !endRaw) continue;
+    const startTs = new Date(startRaw).getTime();
+    const endTs = new Date(endRaw).getTime();
+    const title = ev.summary ?? "";
+    const desc = ev.description ?? "";
+    const isAllDay = Boolean(ev.start?.date);
+    const videoMatch =
+      device.calendarDetectVideoLinks &&
+      ((ev.location ?? "").match(VIDEO_LINK_RE) || (ev.description ?? "").match(VIDEO_LINK_RE));
+    let key: number | null = null;
+    if (matchKeyword(title, desc)) key = device.calendarKeywordStatusKey ?? null;
+    else if (videoMatch && device.calendarVideoStatusKey) key = device.calendarVideoStatusKey;
+    else if (isAllDay && device.calendarOooStatusKey) key = device.calendarOooStatusKey;
+    else if (!isAllDay && device.calendarMeetingStatusKey) key = device.calendarMeetingStatusKey;
+    else if (device.calendarIdleUsePreferred && device.preferredStatusKey) key = device.preferredStatusKey;
+    else if (device.calendarIdleStatusKey) key = device.calendarIdleStatusKey;
+    mapped.push({ start: startTs, end: endTs, statusKey: key });
+  }
+  return mapped;
+}
