@@ -19,6 +19,7 @@ type DeviceRecord = {
   statuses?: { key: number; label: string; enabled: boolean }[];
   activeStatusKey?: number | null;
   activeStatusLabel?: string | null;
+  lastIcsSyncedAt?: number | null;
 };
 
 type GoogleTokenRecord = {

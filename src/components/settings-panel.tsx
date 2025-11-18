@@ -319,45 +319,67 @@ export default function SettingsPanel() {
         <div>
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Calendar synchronization</h3>
           <p className="text-xs text-zinc-600 dark:text-zinc-300">
-            Paste an ICS feed to map meetings or out-of-office events to statuses.
+            Connect Google Calendar or paste an ICS feed to map meetings, OOO, or keyword matches to your statuses.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={startGoogleConnect}
-            className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-700 dark:hover:bg-zinc-700"
-          >
-            {googleConnected ? "Reconnect Google Calendar" : "Connect Google Calendar"}
-          </button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={googleConnected ? undefined : startGoogleConnect}
+              className={`rounded-md px-3 py-2 text-xs font-semibold shadow-sm ring-1 transition ${
+                googleConnected
+                  ? "bg-red-50 text-red-700 ring-red-200 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-100 dark:ring-red-800"
+                  : "bg-white text-zinc-800 ring-zinc-200 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-700 dark:hover:bg-zinc-700"
+              }`}
+              onClickCapture={googleConnected ? async () => {
+                try {
+                  await apiFetch("/api/google-calendar/disconnect", { method: "POST" });
+                  setGoogleConnected(false);
+                  setGoogleCalendars([]);
+                  setCalendarSelection([]);
+                  setGoogleLastSynced(null);
+                  addToast({ message: "Google disconnected", type: "success" });
+                } catch (err) {
+                  const message = err instanceof Error ? err.message : "Failed to disconnect";
+                  addToast({ message, type: "error" });
+                }
+              } : undefined}
+            >
+              {googleConnected ? "Disconnect Google" : "Connect Google Calendar"}
+            </button>
+          </div>
           {googleConnected !== null && (
             <span className="text-xs text-zinc-600 dark:text-zinc-400">
               {googleConnected ? "Connected" : "Not connected"}
             </span>
           )}
           {googleConnected ? (
-            <button
-              type="button"
-              onClick={syncGoogleCalendar}
-              disabled={syncingGoogle}
-              className="rounded-md bg-zinc-900 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-            >
-              {syncingGoogle ? "Syncing…" : "Sync Google now"}
-            </button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <button
+                type="button"
+                onClick={syncGoogleCalendar}
+                disabled={syncingGoogle}
+                className="rounded-md bg-zinc-900 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              >
+                {syncingGoogle ? "Syncing…" : "Sync Google now"}
+              </button>
+              <button
+                type="button"
+                onClick={refreshGoogleCalendars}
+                disabled={loadingCalendars}
+                className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-700 dark:hover:bg-zinc-700"
+              >
+                {loadingCalendars ? "Refreshing…" : "Refresh calendars"}
+              </button>
+            </div>
           ) : null}
           {googleConnected ? (
-            <button
-              type="button"
-              onClick={refreshGoogleCalendars}
-              disabled={loadingCalendars}
-              className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-700 dark:hover:bg-zinc-700"
-            >
-              {loadingCalendars ? "Refreshing…" : "Refresh calendars"}
-            </button>
-          ) : null}
-          {googleConnected && googleLastSynced ? (
             <span className="text-[11px] text-zinc-600 dark:text-zinc-400">
-              Last synced: {new Date(googleLastSynced).toLocaleString()}
+              Last synced:{" "}
+              {googleLastSynced
+                ? new Date(googleLastSynced).toLocaleString()
+                : "Not yet synced"}
             </span>
           ) : null}
         </div>
