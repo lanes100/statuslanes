@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { decrypt } from "@/lib/crypto";
 import { getOAuthClient, getCalendarClient } from "@/lib/google";
 
 type SyncState = {
@@ -139,13 +140,14 @@ export async function POST(request: Request) {
           if (chosenKey) {
             const label = device.statuses?.find((s) => s.key === chosenKey)?.label ?? null;
             chosenLabel = label;
-            // Update device with active status if changed
+            // Update device with active status if changed and push to TRMNL
             if (device.activeStatusKey !== chosenKey || device.activeStatusLabel !== chosenLabel) {
               await deviceRef.update({
                 activeStatusKey: chosenKey,
                 activeStatusLabel: chosenLabel,
                 updatedAt: Date.now(),
               });
+              await pushStatusToTrmnl(device, chosenKey, chosenLabel ?? "");
             }
           }
         } catch (err) {
@@ -168,4 +170,67 @@ export async function POST(request: Request) {
     console.error("google sync-run error", error);
     return NextResponse.json({ error: "Failed to sync calendars" }, { status: 500 });
   }
+}
+
+async function pushStatusToTrmnl(device: DeviceRecord, statusKey: number | null, statusLabel: string) {
+  const webhookUrlEncrypted = (device as any).webhookUrlEncrypted as string | undefined;
+  if (!webhookUrlEncrypted) return;
+  const webhookUrl = decrypt(webhookUrlEncrypted);
+  const timestamp = formatTimestamp(
+    Date.now(),
+    device.timezone || "UTC",
+    device.dateFormat || "MDY",
+    device.timeFormat || "24h",
+  );
+  try {
+    await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        merge_variables: {
+          status_text: statusLabel,
+          status_source: "Google Calendar",
+          show_last_updated: (device as any).showLastUpdated ?? true,
+          show_status_source: (device as any).showStatusSource ?? false,
+          timezone: device.timezone,
+          time_format: device.timeFormat,
+          date_format: device.dateFormat,
+          updated_at: timestamp,
+        },
+      }),
+    });
+  } catch (err) {
+    console.error("pushStatusToTrmnl failed", err);
+  }
+}
+
+function formatTimestamp(timestamp: number, timezone: string, dateFormat: string, timeFormat: string): string {
+  const date = new Date(timestamp);
+  const hour12 = timeFormat !== "24h";
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12,
+  }).formatToParts(date);
+
+  const lookup: Record<string, string> = {};
+  for (const p of parts) {
+    if (p.type !== "literal") lookup[p.type] = p.value;
+  }
+
+  const yyyy = lookup.year;
+  const mm = lookup.month;
+  const dd = lookup.day;
+
+  const dateStr =
+    dateFormat === "DMY" ? `${dd}/${mm}/${yyyy}` : dateFormat === "YMD" ? `${yyyy}-${mm}-${dd}` : `${mm}/${dd}/${yyyy}`;
+
+  const timeStr = `${lookup.hour ?? ""}:${lookup.minute ?? ""}${hour12 && lookup.dayPeriod ? " " + lookup.dayPeriod : ""}`;
+
+  return `${dateStr} ${timeStr}`.trim();
 }

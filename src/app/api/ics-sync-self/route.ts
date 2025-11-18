@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import { decrypt } from "@/lib/crypto";
 import ICAL from "ical.js";
 
 const SESSION_COOKIE_NAME = "statuslanes_session";
@@ -115,6 +116,7 @@ export async function POST() {
           activeStatusLabel: chosenLabel,
           updatedAt: Date.now(),
         });
+        await pushStatusToTrmnl(device, chosenKey, chosenLabel ?? "");
       }
     }
 
@@ -126,4 +128,67 @@ export async function POST() {
     console.error("ics-sync-self error", error);
     return NextResponse.json({ error: "Failed to sync ICS" }, { status: 500 });
   }
+}
+
+async function pushStatusToTrmnl(device: DeviceRecord, statusKey: number | null, statusLabel: string) {
+  const webhookUrlEncrypted = (device as any).webhookUrlEncrypted as string | undefined;
+  if (!webhookUrlEncrypted) return;
+  const webhookUrl = decrypt(webhookUrlEncrypted);
+  const timestamp = formatTimestamp(
+    Date.now(),
+    (device as any).timezone || "UTC",
+    (device as any).dateFormat || "MDY",
+    (device as any).timeFormat || "24h",
+  );
+  try {
+    await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        merge_variables: {
+          status_text: statusLabel,
+          status_source: "ICS",
+          show_last_updated: (device as any).showLastUpdated ?? true,
+          show_status_source: (device as any).showStatusSource ?? false,
+          timezone: (device as any).timezone,
+          time_format: (device as any).timeFormat,
+          date_format: (device as any).dateFormat,
+          updated_at: timestamp,
+        },
+      }),
+    });
+  } catch (err) {
+    console.error("pushStatusToTrmnl failed", err);
+  }
+}
+
+function formatTimestamp(timestamp: number, timezone: string, dateFormat: string, timeFormat: string): string {
+  const date = new Date(timestamp);
+  const hour12 = timeFormat !== "24h";
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12,
+  }).formatToParts(date);
+
+  const lookup: Record<string, string> = {};
+  for (const p of parts) {
+    if (p.type !== "literal") lookup[p.type] = p.value;
+  }
+
+  const yyyy = lookup.year;
+  const mm = lookup.month;
+  const dd = lookup.day;
+
+  const dateStr =
+    dateFormat === "DMY" ? `${dd}/${mm}/${yyyy}` : dateFormat === "YMD" ? `${yyyy}-${mm}-${dd}` : `${mm}/${dd}/${yyyy}`;
+
+  const timeStr = `${lookup.hour ?? ""}:${lookup.minute ?? ""}${hour12 && lookup.dayPeriod ? " " + lookup.dayPeriod : ""}`;
+
+  return `${dateStr} ${timeStr}`.trim();
 }
