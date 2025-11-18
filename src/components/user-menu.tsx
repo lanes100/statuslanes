@@ -58,10 +58,10 @@ export default function UserMenu({ email }: Props) {
           open ? "pointer-events-auto scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"
         }`}
       >
-        <div className="flex flex-col items-end gap-4">
+        <div className="flex flex-col items-stretch gap-4">
           <Link
             href="/settings"
-            className="w-full rounded-lg px-3 py-2 text-right text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
+            className="w-full rounded-lg border border-zinc-200 bg-zinc-100 px-3 py-2 text-left text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
             onClick={() => setOpen(false)}
           >
             Settings
@@ -76,7 +76,7 @@ export default function UserMenu({ email }: Props) {
             <button
               onClick={logout}
               disabled={signingOut}
-              className="w-full rounded-lg bg-zinc-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              className="w-full rounded-lg bg-zinc-100 px-4 py-3 text-center text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
             >
               {signingOut ? "Signing out..." : "Sign out"}
             </button>
