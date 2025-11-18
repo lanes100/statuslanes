@@ -23,7 +23,7 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-zinc-900 text-zinc-50 overflow-x-hidden">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-10">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 pt-10 pb-4">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex-1 min-w-[240px]">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">Statuslanes</p>
