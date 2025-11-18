@@ -22,6 +22,25 @@ type Device = {
   calendarIdleStatusKey?: number | null;
 };
 
+const getBrowserTimezone = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return undefined;
+  }
+};
+
+const detectDeviceTimeFormat = (): "24h" | "12h" => {
+  try {
+    const formatter = new Intl.DateTimeFormat(undefined, { hour: "numeric" });
+    const parts = formatter.formatToParts(new Date());
+    if (parts.some((p) => p.type === "dayPeriod")) return "12h";
+    return "24h";
+  } catch {
+    return "24h";
+  }
+};
+
 type FetchState =
   | { status: "idle" }
   | { status: "loading" }
@@ -143,7 +162,12 @@ export default function DeviceDashboard() {
             if (!pluginId.trim()) return;
             setSavingDevice(true);
             try {
-              const body = { pluginId: pluginId.trim(), deviceName: deviceName.trim() || "My TRMNL" };
+              const body = {
+                pluginId: pluginId.trim(),
+                deviceName: deviceName.trim() || "My TRMNL",
+                timezone: getBrowserTimezone(),
+                timeFormat: detectDeviceTimeFormat(),
+              };
               await apiFetch("/api/register-device", { method: "POST", body: JSON.stringify(body) });
               setPluginId("");
               addToast({ message: "Plugin saved", type: "success" });

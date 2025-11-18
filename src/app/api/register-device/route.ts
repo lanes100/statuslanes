@@ -63,6 +63,8 @@ export async function POST(request: Request) {
     const pluginId = (body?.pluginId as string | undefined)?.trim();
     const deviceName = (body?.deviceName as string | undefined) ?? "My TRMNL";
     const incomingDeviceId = body?.deviceId as string | undefined;
+    const requestedTimezone = (body?.timezone as string | undefined)?.trim();
+    const requestedTimeFormat = (body?.timeFormat as string | undefined)?.trim();
 
     let resolvedWebhookUrl = webhookUrl;
 
@@ -108,8 +110,8 @@ export async function POST(request: Request) {
         statuses: defaultStatuses,
         showLastUpdated: true,
         showStatusSource: false,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        timeFormat: "24h",
+        timezone: requestedTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timeFormat: requestedTimeFormat === "12h" ? "12h" : "24h",
         dateFormat: "MDY",
         calendarIcsUrl: null,
         calendarMeetingStatusKey: null,

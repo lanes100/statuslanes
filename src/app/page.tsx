@@ -22,7 +22,7 @@ export default async function Home() {
   const user = await getSessionUser();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-zinc-900 px-4 py-10 text-zinc-50">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-zinc-900 px-4 py-10 text-zinc-50 overflow-x-hidden">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex-1 min-w-[240px]">
