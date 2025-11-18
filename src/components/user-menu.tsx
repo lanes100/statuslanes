@@ -43,12 +43,12 @@ export default function UserMenu({ email }: Props) {
         aria-expanded={open}
         aria-label="Open menu"
         onClick={() => setOpen((prev) => !prev)}
-        className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 shadow-sm transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+        className="flex h-12 w-12 items-center justify-center rounded-full text-zinc-700 transition hover:bg-zinc-100/50 active:bg-zinc-200/60 dark:text-zinc-100 dark:hover:bg-zinc-800/60 dark:active:bg-zinc-700/60"
       >
-        <div className="flex flex-col gap-[5px]">
-          <span className="block h-[2px] w-5 rounded-full bg-current" />
-          <span className="block h-[2px] w-5 rounded-full bg-current" />
-          <span className="block h-[2px] w-5 rounded-full bg-current" />
+        <div className="flex flex-col gap-[6px]">
+          <span className="block h-[3px] w-6 rounded-full bg-current" />
+          <span className="block h-[3px] w-6 rounded-full bg-current" />
+          <span className="block h-[3px] w-6 rounded-full bg-current" />
         </div>
       </button>
 
