@@ -303,7 +303,7 @@ export default function DeviceDashboard() {
                   key={key}
                   onClick={() => setStatus(key, label)}
                   disabled={isPending}
-                  className={`flex h-full min-h-[76px] items-center justify-center rounded-xl px-4 py-4 text-center text-sm font-semibold leading-snug shadow-sm transition ${
+                  className={`flex h-full min-h-[64px] items-center justify-center rounded-xl px-4 py-3 text-center text-sm font-semibold leading-tight shadow-sm transition ${
                     isActive
                       ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-50"
                       : "bg-zinc-100 text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
