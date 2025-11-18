@@ -71,7 +71,7 @@ export async function POST(request: Request) {
         show_status_source: data.showStatusSource ?? false,
         updated_at: formattedTimestamp,
       },
-      merge_strategy: "deep_merge",
+      merge_strategy: "replace",
     };
 
     const webhookRes = await sendWebhookWithRetry(webhookUrl, payload);

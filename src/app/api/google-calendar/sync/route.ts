@@ -242,7 +242,7 @@ async function pushStatusToTrmnl(device: DeviceRecord, statusKey: number | null,
           show_status_source: device.showStatusSource ?? false,
           updated_at: timestamp,
         },
-        merge_strategy: "deep_merge",
+        merge_strategy: "replace",
       }),
     });
   } catch (err) {

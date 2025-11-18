@@ -140,7 +140,7 @@ export async function POST(request: Request) {
             show_last_updated: true,
             show_status_source: false,
           },
-          merge_strategy: "deep_merge",
+          merge_strategy: "replace",
         }),
       });
     } catch (err) {

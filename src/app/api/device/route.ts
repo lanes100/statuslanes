@@ -244,11 +244,11 @@ export async function PATCH(request: Request) {
               show_last_updated: typeof showLastUpdated === "boolean" ? showLastUpdated : data.showLastUpdated ?? true,
               show_status_source: typeof showStatusSource === "boolean" ? showStatusSource : data.showStatusSource ?? false,
             },
-            merge_strategy: "deep_merge",
+            merge_strategy: "replace",
           }),
         });
       } catch (err) {
-        console.error("Failed to push labels to TRMNL", err);
+        console.error("Failed to push flags to TRMNL", err);
       }
     }
 
