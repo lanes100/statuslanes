@@ -105,14 +105,14 @@ export default function SettingsPanel() {
           dateFormat: res.device.dateFormat ?? "MDY",
           calendarIcsUrl: res.device.calendarIcsUrl ?? null,
           calendarMeetingStatusKey: res.device.calendarMeetingStatusKey ?? null,
-          calendarOooStatusKey: res.device.calendarOooStatusKey ?? null,
-          calendarIdleStatusKey: res.device.calendarIdleStatusKey ?? null,
+          calendarOooStatusKey: res.device.calendarOooStatusKey ?? 5,
+          calendarIdleStatusKey: res.device.calendarIdleUsePreferred ? null : res.device.calendarIdleStatusKey ?? null,
           statuses: res.device.statuses ?? [],
           calendarKeywords: res.device.calendarKeywords ?? [],
           calendarKeywordStatusKey: res.device.calendarKeywordStatusKey ?? null,
-          calendarVideoStatusKey: res.device.calendarVideoStatusKey ?? null,
-          calendarDetectVideoLinks: res.device.calendarDetectVideoLinks ?? false,
-          calendarIdleUsePreferred: res.device.calendarIdleUsePreferred ?? false,
+          calendarVideoStatusKey: res.device.calendarVideoStatusKey ?? 2,
+          calendarDetectVideoLinks: res.device.calendarDetectVideoLinks ?? true,
+          calendarIdleUsePreferred: res.device.calendarIdleUsePreferred ?? true,
           // store selection separately for UI
         });
         setCalendarSelection(res.device.calendarIds ?? []);
@@ -552,13 +552,13 @@ export default function SettingsPanel() {
           <div className="space-y-1">
             <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">No events map to</label>
             <select
-              value={
-                device.calendarIdleUsePreferred
-                  ? "previous"
-                  : device.calendarIdleStatusKey !== null && device.calendarIdleStatusKey !== undefined
-                    ? device.calendarIdleStatusKey
-                    : ""
-              }
+            value={
+              device.calendarIdleUsePreferred
+                ? "previous"
+                : device.calendarIdleStatusKey !== null && device.calendarIdleStatusKey !== undefined
+                  ? device.calendarIdleStatusKey
+                  : ""
+            }
               onChange={(e) => {
                 if (e.target.value === "previous") {
                   setDevice({ ...device, calendarIdleUsePreferred: true, calendarIdleStatusKey: null });

@@ -122,8 +122,12 @@ export async function POST(request: Request) {
         calendarKeywords: [],
         calendarKeywordStatusKey: null,
         calendarIds: [],
-        calendarDetectVideoLinks: false,
-        calendarVideoStatusKey: null,
+        calendarDetectVideoLinks: true,
+        calendarVideoStatusKey: 2, // default to "in a meeting"
+        calendarMeetingStatusKey: null, // busy events do nothing by default
+        calendarOooStatusKey: 5, // out of office
+        calendarIdleUsePreferred: true,
+        calendarIdleStatusKey: null,
         activeStatusKey: null,
         activeStatusLabel: null,
         createdAt: now,
