@@ -61,7 +61,7 @@ export default function UserMenu({ email }: Props) {
         <div className="flex flex-col items-stretch gap-4">
           <Link
             href="/settings"
-            className="w-full rounded-lg border border-zinc-200 bg-zinc-100 px-3 py-2 text-left text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+            className="w-full rounded-lg border border-zinc-200 bg-zinc-100 px-3 py-2 text-center text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
             onClick={() => setOpen(false)}
           >
             Settings
