@@ -22,8 +22,8 @@ export default async function Home() {
   const user = await getSessionUser();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-zinc-900 text-zinc-50 overflow-x-hidden">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 pt-6 pb-2">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-zinc-900 text-zinc-50 overflow-hidden">
+      <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-4 px-4 py-6">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex-1 min-w-[240px]">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">Statuslanes</p>
@@ -37,12 +37,12 @@ export default async function Home() {
           {user ? <UserMenu email={user.email} /> : null}
         </header>
 
-        <main className="flex flex-col gap-6">
-          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <main className="flex min-h-0 flex-1 flex-col">
+          <section className="flex flex-1 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             {user ? (
               <DeviceDashboard />
             ) : (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-1 flex-col gap-3">
                 <Link
                   href="/login"
                   className="w-full rounded-xl bg-zinc-100 px-4 py-3 text-center text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
