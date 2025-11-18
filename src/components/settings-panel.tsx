@@ -43,6 +43,10 @@ export default function SettingsPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [googleConnected, setGoogleConnected] = useState<boolean | null>(null);
+  const [syncingGoogle, setSyncingGoogle] = useState(false);
+  const [googleCalendars, setGoogleCalendars] = useState<{ id: string; summary: string; primary?: boolean }[]>([]);
+  const [calendarSelection, setCalendarSelection] = useState<string[]>([]);
   const { toasts, addToast, removeToast } = useToast();
   const timezones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [];
   const browserTimezone = getBrowserTimezone();
@@ -92,7 +96,9 @@ export default function SettingsPanel() {
           calendarIdleStatusKey: res.device.calendarIdleStatusKey ?? null,
           statuses: res.device.statuses ?? [],
           calendarKeywords: res.device.calendarKeywords ?? [],
+          // store selection separately for UI
         });
+        setCalendarSelection(res.device.calendarIds ?? []);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load settings";
         // hide settings if device not registered yet
@@ -106,6 +112,27 @@ export default function SettingsPanel() {
       }
     };
     fetchDevice();
+    const fetchGoogleStatus = async () => {
+      try {
+        const res = await apiFetch<{ connected: boolean }>("/api/google-calendar/status", { retry: false });
+        setGoogleConnected(res.connected);
+        if (res.connected) {
+          try {
+            const calRes = await apiFetch<{ calendars: { id: string; summary: string; primary?: boolean }[] }>(
+              "/api/google-calendar/calendars",
+              { retry: false }
+            );
+            setGoogleCalendars(calRes.calendars || []);
+          } catch (err) {
+            console.error("calendar fetch failed", err);
+            setGoogleCalendars([]);
+          }
+        }
+      } catch {
+        setGoogleConnected(false);
+      }
+    };
+    fetchGoogleStatus();
   }, [addToast]);
 
   const saveSettings = async () => {
@@ -126,6 +153,7 @@ export default function SettingsPanel() {
           calendarOooStatusKey: device.calendarOooStatusKey,
           calendarIdleStatusKey: device.calendarIdleStatusKey,
           calendarKeywords: device.calendarKeywords ?? [],
+          calendarIds: calendarSelection,
         }),
       });
       addToast({ message: "Settings updated", type: "success" });
@@ -146,6 +174,19 @@ export default function SettingsPanel() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to start Google auth";
       addToast({ message, type: "error" });
+    }
+  };
+
+  const syncGoogleCalendar = async () => {
+    setSyncingGoogle(true);
+    try {
+      await apiFetch("/api/google-calendar/sync", { method: "POST" });
+      addToast({ message: "Google Calendar sync queued", type: "success" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to sync Google Calendar";
+      addToast({ message, type: "error" });
+    } finally {
+      setSyncingGoogle(false);
     }
   };
 
@@ -254,6 +295,63 @@ export default function SettingsPanel() {
             Paste an ICS feed to map meetings or out-of-office events to statuses.
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={startGoogleConnect}
+            className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-700 dark:hover:bg-zinc-700"
+          >
+            {googleConnected ? "Reconnect Google Calendar" : "Connect Google Calendar"}
+          </button>
+          {googleConnected !== null && (
+            <span className="text-xs text-zinc-600 dark:text-zinc-400">
+              {googleConnected ? "Connected" : "Not connected"}
+            </span>
+          )}
+          {googleConnected ? (
+            <button
+              type="button"
+              onClick={syncGoogleCalendar}
+              disabled={syncingGoogle}
+              className="rounded-md bg-zinc-900 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              {syncingGoogle ? "Syncing…" : "Sync Google now"}
+            </button>
+          ) : null}
+        </div>
+        {googleConnected && googleCalendars.length > 0 ? (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">Google calendars to sync</p>
+            <div className="space-y-1">
+              {googleCalendars.map((cal) => {
+                const checked = calendarSelection.includes(cal.id);
+                return (
+                  <label
+                    key={cal.id}
+                    className="flex items-center justify-between rounded-md border border-zinc-200 px-3 py-2 text-xs dark:border-zinc-700"
+                  >
+                    <span className="flex-1 text-zinc-800 dark:text-zinc-100">
+                      {cal.summary} {cal.primary ? "(Primary)" : ""}
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        const next = new Set(calendarSelection);
+                        if (e.target.checked) {
+                          next.add(cal.id);
+                        } else {
+                          next.delete(cal.id);
+                        }
+                        setCalendarSelection(Array.from(next));
+                      }}
+                    />
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
         <div className="space-y-2">
           <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">ICS URL</label>
           <input

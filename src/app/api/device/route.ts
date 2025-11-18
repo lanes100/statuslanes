@@ -106,6 +106,7 @@ export async function PATCH(request: Request) {
     const calendarOooStatusKeyRaw = body?.calendarOooStatusKey;
     const calendarIdleStatusKeyRaw = body?.calendarIdleStatusKey;
     const calendarKeywordsRaw = body?.calendarKeywords;
+    const calendarIdsRaw = body?.calendarIds;
     if (typeof timezone === "string") {
       update.timezone = timezone;
     }
@@ -175,6 +176,20 @@ export async function PATCH(request: Request) {
       update.calendarKeywords = keywords.slice(0, 20);
     }
 
+    if (calendarIdsRaw !== undefined) {
+      const ids: string[] = Array.isArray(calendarIdsRaw)
+        ? (calendarIdsRaw as unknown[])
+            .map((v) => (typeof v === "string" ? v.trim() : ""))
+            .filter((v) => v.length > 0)
+        : typeof calendarIdsRaw === "string"
+          ? calendarIdsRaw
+              .split(",")
+              .map((s) => s.trim())
+              .filter((s) => s.length > 0)
+          : [];
+      update.calendarIds = ids.slice(0, 10);
+    }
+
     if (
       !update.statuses &&
       !("showLastUpdated" in update) &&
@@ -186,7 +201,8 @@ export async function PATCH(request: Request) {
       !("calendarMeetingStatusKey" in update) &&
       !("calendarOooStatusKey" in update) &&
       !("calendarIdleStatusKey" in update) &&
-      !("calendarKeywords" in update)
+      !("calendarKeywords" in update) &&
+      !("calendarIds" in update)
     ) {
       return NextResponse.json({ error: "No updates provided" }, { status: 400 });
     }
