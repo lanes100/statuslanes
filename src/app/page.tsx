@@ -23,7 +23,7 @@ export default async function Home() {
 
   return (
     <div className="h-screen bg-gradient-to-b from-zinc-950 to-zinc-900 text-zinc-50 overflow-hidden">
-      <div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 px-4 py-6">
+      <div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 px-4 py-6 overflow-y-auto">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex-1 min-w-[240px]">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">Statuslanes</p>
@@ -37,8 +37,8 @@ export default async function Home() {
           {user ? <UserMenu email={user.email} /> : null}
         </header>
 
-        <main className="flex min-h-0 flex-1 flex-col pb-4 overflow-hidden">
-          <section className="flex h-full flex-col overflow-auto rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <main className="flex min-h-0 flex-1 flex-col pb-4">
+          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             {user ? (
               <DeviceDashboard />
             ) : (
