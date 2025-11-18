@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getOAuthClient, getCalendarClient } from "@/lib/google";
 import { decrypt } from "@/lib/crypto";
 
@@ -38,88 +40,10 @@ export async function POST() {
       return NextResponse.json({ error: "No calendars selected" }, { status: 400 });
     }
 
-    const oauth2Client = getOAuthClient();
-    oauth2Client.setCredentials({
-      access_token: tokenData?.accessToken ?? undefined,
-      refresh_token: tokenData?.refreshToken ?? undefined,
-      expiry_date: tokenData?.expiryDate ?? undefined,
-      token_type: tokenData?.tokenType ?? undefined,
-      scope: tokenData?.scope ?? undefined,
-    });
-    const calendar = getCalendarClient(oauth2Client);
-
-    const now = Date.now();
-    let changed = false;
-    for (const calId of calendarIds) {
-      const listRes = await calendar.events.list({
-        calendarId: calId,
-        singleEvents: true,
-        orderBy: "startTime",
-        maxResults: 50,
-        timeMin: new Date(now - 1000 * 60 * 60 * 24).toISOString(),
-        timeMax: new Date(now + 1000 * 60 * 60 * 24 * 7).toISOString(),
-      });
-
-      const events = listRes.data.items ?? [];
-      const upcoming = events.filter((ev) => {
-        const start = ev.start?.dateTime ?? ev.start?.date;
-        const end = ev.end?.dateTime ?? ev.end?.date;
-        if (!start || !end) return false;
-        const startTs = new Date(start).getTime();
-        const endTs = new Date(end).getTime();
-        return endTs > now - 5 * 60 * 1000 && startTs < now + 60 * 60 * 1000;
-      });
-
-      const keywordList = (device.calendarKeywords ?? []).map((s) => s.toLowerCase());
-      const matchKeyword = device.calendarKeywordStatusKey
-        ? (title: string, desc: string) => {
-            const hay = `${title} ${desc}`.toLowerCase();
-            return keywordList.some((k) => hay.includes(k));
-          }
-        : () => false;
-
-      let chosenKey: number | null = null;
-      let chosenLabel: string | null = null;
-
-      for (const ev of upcoming) {
-        const title = ev.summary ?? "";
-        const desc = ev.description ?? "";
-        const isAllDay = Boolean(ev.start?.date);
-        if (matchKeyword(title, desc)) {
-          chosenKey = device.calendarKeywordStatusKey ?? null;
-          break;
-        }
-        if (isAllDay && device.calendarOooStatusKey) {
-          chosenKey = device.calendarOooStatusKey;
-          break;
-        }
-        if (!isAllDay && device.calendarMeetingStatusKey) {
-          chosenKey = device.calendarMeetingStatusKey;
-          break;
-        }
-      }
-
-      if (!chosenKey && device.calendarIdleStatusKey) {
-        chosenKey = device.calendarIdleStatusKey;
-      }
-
-      if (chosenKey) {
-        const label = device.statuses?.find((s) => s.key === chosenKey)?.label ?? null;
-        chosenLabel = label;
-        if (device.activeStatusKey !== chosenKey || device.activeStatusLabel !== chosenLabel) {
-          changed = true;
-          await deviceRef.update({
-            activeStatusKey: chosenKey,
-            activeStatusLabel: chosenLabel,
-            updatedAt: Date.now(),
-          });
-          await pushStatusToTrmnl(device, chosenKey, chosenLabel ?? "");
-        }
-      }
-    }
-
+    // Run the same logic as bulk sync-run but scoped to this user
+    const result = await runGoogleSyncForUser(device, deviceRef, tokenData);
     await ref.update({ manualSyncRequestedAt: Date.now() });
-    return NextResponse.json({ synced: true, changed }, { status: 200 });
+    return NextResponse.json({ synced: true, ...result }, { status: 200 });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "UNAUTHENTICATED") {
       return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
@@ -148,6 +72,95 @@ type DeviceRecord = {
   showStatusSource?: boolean;
   webhookUrlEncrypted?: string;
 };
+
+async function runGoogleSyncForUser(device: DeviceRecord, deviceRef: FirebaseFirestore.DocumentReference, tokenData: any) {
+  const calendarIds = device.calendarIds ?? [];
+  if (calendarIds.length === 0) {
+    return { changed: false, reason: "no_calendars" };
+  }
+
+  const oauth2Client = getOAuthClient();
+  oauth2Client.setCredentials({
+    access_token: tokenData?.accessToken ?? undefined,
+    refresh_token: tokenData?.refreshToken ?? undefined,
+    expiry_date: tokenData?.expiryDate ?? undefined,
+    token_type: tokenData?.tokenType ?? undefined,
+    scope: tokenData?.scope ?? undefined,
+  });
+  const calendar = getCalendarClient(oauth2Client);
+
+  const now = Date.now();
+  let changed = false;
+  for (const calId of calendarIds) {
+    const listRes = await calendar.events.list({
+      calendarId: calId,
+      singleEvents: true,
+      orderBy: "startTime",
+      maxResults: 50,
+      timeMin: new Date(now - 1000 * 60 * 60 * 24).toISOString(),
+      timeMax: new Date(now + 1000 * 60 * 60 * 24 * 7).toISOString(),
+    });
+
+    const events = listRes.data.items ?? [];
+    const upcoming = events.filter((ev) => {
+      const start = ev.start?.dateTime ?? ev.start?.date;
+      const end = ev.end?.dateTime ?? ev.end?.date;
+      if (!start || !end) return false;
+      const startTs = new Date(start).getTime();
+      const endTs = new Date(end).getTime();
+      return endTs > now - 5 * 60 * 1000 && startTs < now + 60 * 60 * 1000;
+    });
+
+    const keywordList = (device.calendarKeywords ?? []).map((s) => s.toLowerCase());
+    const matchKeyword = device.calendarKeywordStatusKey
+      ? (title: string, desc: string) => {
+          const hay = `${title} ${desc}`.toLowerCase();
+          return keywordList.some((k) => hay.includes(k));
+        }
+      : () => false;
+
+    let chosenKey: number | null = null;
+    let chosenLabel: string | null = null;
+
+    for (const ev of upcoming) {
+      const title = ev.summary ?? "";
+      const desc = ev.description ?? "";
+      const isAllDay = Boolean(ev.start?.date);
+      if (matchKeyword(title, desc)) {
+        chosenKey = device.calendarKeywordStatusKey ?? null;
+        break;
+      }
+      if (isAllDay && device.calendarOooStatusKey) {
+        chosenKey = device.calendarOooStatusKey;
+        break;
+      }
+      if (!isAllDay && device.calendarMeetingStatusKey) {
+        chosenKey = device.calendarMeetingStatusKey;
+        break;
+      }
+    }
+
+    if (!chosenKey && device.calendarIdleStatusKey) {
+      chosenKey = device.calendarIdleStatusKey;
+    }
+
+    if (chosenKey) {
+      const label = device.statuses?.find((s) => s.key === chosenKey)?.label ?? null;
+      chosenLabel = label;
+      if (device.activeStatusKey !== chosenKey || device.activeStatusLabel !== chosenLabel) {
+        changed = true;
+        await deviceRef.update({
+          activeStatusKey: chosenKey,
+          activeStatusLabel: chosenLabel,
+          updatedAt: Date.now(),
+        });
+        await pushStatusToTrmnl(device, chosenKey, chosenLabel ?? "");
+      }
+    }
+  }
+
+  return { changed };
+}
 
 async function pushStatusToTrmnl(device: DeviceRecord, statusKey: number | null, statusLabel: string) {
   const webhookUrlEncrypted = device.webhookUrlEncrypted;

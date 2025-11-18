@@ -185,7 +185,9 @@ export default function SettingsPanel() {
     setSyncingGoogle(true);
     try {
       await apiFetch("/api/google-calendar/sync", { method: "POST" });
-      addToast({ message: "Google Calendar sync queued", type: "success" });
+      addToast({ message: "Google Calendar synced", type: "success" });
+      await refreshGoogleCalendars();
+      setGoogleLastSynced(Date.now());
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to sync Google Calendar";
       addToast({ message, type: "error" });
