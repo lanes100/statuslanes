@@ -22,6 +22,7 @@ type DeviceRecord = {
   activeStatusLabel?: string | null;
   preferredStatusKey?: number | null;
   preferredStatusLabel?: string | null;
+  calendarIdleUsePreferred?: boolean;
   lastIcsSyncedAt?: number | null;
   timezone?: string;
   dateFormat?: string;
@@ -150,10 +151,12 @@ export async function POST(request: Request) {
       }
 
           if (!chosenKey) {
-            if (device.preferredStatusKey) {
+            if (device.calendarIdleUsePreferred && device.preferredStatusKey) {
               chosenKey = device.preferredStatusKey;
             } else if (device.calendarIdleStatusKey) {
               chosenKey = device.calendarIdleStatusKey;
+            } else if (device.preferredStatusKey) {
+              chosenKey = device.preferredStatusKey;
             }
           }
 
@@ -164,11 +167,16 @@ export async function POST(request: Request) {
             chosenLabel = label;
             // Update device with active status if changed and push to TRMNL
             if (device.activeStatusKey !== chosenKey || device.activeStatusLabel !== chosenLabel) {
-              await deviceRef.update({
+              const updatePayload: Record<string, unknown> = {
                 activeStatusKey: chosenKey,
                 activeStatusLabel: chosenLabel,
                 updatedAt: Date.now(),
-              });
+              };
+              if (!device.preferredStatusKey && device.activeStatusKey) {
+                updatePayload.preferredStatusKey = device.activeStatusKey;
+                updatePayload.preferredStatusLabel = device.activeStatusLabel ?? null;
+              }
+              await deviceRef.update(updatePayload);
               await pushStatusToTrmnl(device, chosenKey, chosenLabel ?? "");
             }
           }

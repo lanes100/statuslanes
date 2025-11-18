@@ -32,6 +32,7 @@ type DeviceRecord = {
   calendarVideoStatusKey?: number | null;
   preferredStatusKey?: number | null;
   preferredStatusLabel?: string | null;
+  calendarIdleUsePreferred?: boolean;
 };
 
 export async function POST() {
@@ -121,10 +122,14 @@ export async function POST() {
         }
       }
 
-      if (!chosenKey && device.preferredStatusKey) {
-        chosenKey = device.preferredStatusKey;
-      } else if (!chosenKey && device.calendarIdleStatusKey) {
-        chosenKey = device.calendarIdleStatusKey;
+      if (!chosenKey) {
+        if (device.calendarIdleUsePreferred && device.preferredStatusKey) {
+          chosenKey = device.preferredStatusKey;
+        } else if (device.calendarIdleStatusKey) {
+          chosenKey = device.calendarIdleStatusKey;
+        } else if (device.preferredStatusKey) {
+          chosenKey = device.preferredStatusKey;
+        }
       }
 
       if (chosenKey) {
@@ -133,11 +138,16 @@ export async function POST() {
           (chosenKey === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
         chosenLabel = label;
         if (device.activeStatusKey !== chosenKey || device.activeStatusLabel !== chosenLabel) {
-          await deviceRef.update({
+          const updatePayload: Record<string, unknown> = {
             activeStatusKey: chosenKey,
             activeStatusLabel: chosenLabel,
             updatedAt: Date.now(),
-          });
+          };
+          if (!device.preferredStatusKey && device.activeStatusKey) {
+            updatePayload.preferredStatusKey = device.activeStatusKey;
+            updatePayload.preferredStatusLabel = device.activeStatusLabel ?? null;
+          }
+          await deviceRef.update(updatePayload);
           await pushStatusToTrmnl(device, chosenKey, chosenLabel ?? "");
         }
       }

@@ -107,6 +107,7 @@ export async function PATCH(request: Request) {
     const calendarIdleStatusKeyRaw = body?.calendarIdleStatusKey;
     const calendarKeywordStatusKeyRaw = body?.calendarKeywordStatusKey;
     const calendarVideoStatusKeyRaw = body?.calendarVideoStatusKey;
+    const calendarIdleUsePreferredRaw = body?.calendarIdleUsePreferred;
     const calendarKeywordsRaw = body?.calendarKeywords;
     const calendarIdsRaw = body?.calendarIds;
     const calendarDetectVideoLinksRaw = body?.calendarDetectVideoLinks;
@@ -157,7 +158,8 @@ export async function PATCH(request: Request) {
       const idleKey = parseStatusKey(calendarIdleStatusKeyRaw, "Default");
       const keywordKey = parseStatusKey(calendarKeywordStatusKeyRaw, "Keyword");
       const videoKey = parseStatusKey(calendarVideoStatusKeyRaw, "Video link");
-
+      const idleUsePreferred = typeof calendarIdleUsePreferredRaw === "boolean" ? calendarIdleUsePreferredRaw : undefined;
+      if (idleUsePreferred !== undefined) update.calendarIdleUsePreferred = idleUsePreferred;
       if (meetingKey !== undefined) update.calendarMeetingStatusKey = meetingKey;
       if (oooKey !== undefined) update.calendarOooStatusKey = oooKey;
       if (idleKey !== undefined) update.calendarIdleStatusKey = idleKey;
@@ -214,6 +216,7 @@ export async function PATCH(request: Request) {
       !("calendarIdleStatusKey" in update) &&
       !("calendarKeywordStatusKey" in update) &&
       !("calendarVideoStatusKey" in update) &&
+      !("calendarIdleUsePreferred" in update) &&
       !("calendarKeywords" in update) &&
       !("calendarIds" in update) &&
       !("calendarDetectVideoLinks" in update)

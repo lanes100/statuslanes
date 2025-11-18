@@ -21,6 +21,7 @@ type DeviceSettings = {
   calendarKeywordStatusKey?: number | null;
   calendarDetectVideoLinks?: boolean;
   calendarVideoStatusKey?: number | null;
+  calendarIdleUsePreferred?: boolean;
 };
 
 const getBrowserTimezone = () => {
@@ -92,6 +93,7 @@ export default function SettingsPanel() {
             calendarKeywordStatusKey?: number | null;
             calendarVideoStatusKey?: number | null;
             calendarDetectVideoLinks?: boolean;
+            calendarIdleUsePreferred?: boolean;
           };
         }>("/api/device");
         setDevice({
@@ -110,6 +112,7 @@ export default function SettingsPanel() {
           calendarKeywordStatusKey: res.device.calendarKeywordStatusKey ?? null,
           calendarVideoStatusKey: res.device.calendarVideoStatusKey ?? null,
           calendarDetectVideoLinks: res.device.calendarDetectVideoLinks ?? false,
+          calendarIdleUsePreferred: res.device.calendarIdleUsePreferred ?? false,
           // store selection separately for UI
         });
         setCalendarSelection(res.device.calendarIds ?? []);
@@ -176,6 +179,7 @@ export default function SettingsPanel() {
           calendarIds: calendarSelection,
           calendarDetectVideoLinks: device.calendarDetectVideoLinks ?? false,
           calendarVideoStatusKey: device.calendarVideoStatusKey ?? null,
+          calendarIdleUsePreferred: device.calendarIdleUsePreferred ?? false,
         }),
       });
       if (!silent) {
@@ -548,11 +552,28 @@ export default function SettingsPanel() {
           <div className="space-y-1">
             <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">No events map to</label>
             <select
-              value={device.calendarIdleStatusKey ?? ""}
-              onChange={(e) => setDevice({ ...device, calendarIdleStatusKey: e.target.value ? Number(e.target.value) : null })}
+              value={
+                device.calendarIdleUsePreferred
+                  ? "previous"
+                  : device.calendarIdleStatusKey !== null && device.calendarIdleStatusKey !== undefined
+                    ? device.calendarIdleStatusKey
+                    : ""
+              }
+              onChange={(e) => {
+                if (e.target.value === "previous") {
+                  setDevice({ ...device, calendarIdleUsePreferred: true, calendarIdleStatusKey: null });
+                } else {
+                  setDevice({
+                    ...device,
+                    calendarIdleUsePreferred: false,
+                    calendarIdleStatusKey: e.target.value ? Number(e.target.value) : null,
+                  });
+                }
+              }}
               className="w-full rounded-md border border-zinc-200 px-2 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
             >
               <option value="">Do nothing</option>
+              <option value="previous">Previous manual selection</option>
               {statusOptions.map((s) => (
                 <option key={s.key} value={s.key}>
                   {s.label}

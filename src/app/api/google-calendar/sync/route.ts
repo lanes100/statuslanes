@@ -65,6 +65,7 @@ type DeviceRecord = {
   activeStatusLabel?: string | null;
   preferredStatusKey?: number | null;
   preferredStatusLabel?: string | null;
+  calendarIdleUsePreferred?: boolean;
   timezone?: string;
   dateFormat?: string;
   timeFormat?: string;
@@ -149,10 +150,14 @@ async function runGoogleSyncForUser(device: DeviceRecord, deviceRef: FirebaseFir
       }
     }
 
-    if (!chosenKey && device.preferredStatusKey) {
-      chosenKey = device.preferredStatusKey;
-    } else if (!chosenKey && device.calendarIdleStatusKey) {
-      chosenKey = device.calendarIdleStatusKey;
+    if (!chosenKey) {
+      if (device.calendarIdleUsePreferred && device.preferredStatusKey) {
+        chosenKey = device.preferredStatusKey;
+      } else if (device.calendarIdleStatusKey) {
+        chosenKey = device.calendarIdleStatusKey;
+      } else if (device.preferredStatusKey) {
+        chosenKey = device.preferredStatusKey;
+      }
     }
 
     if (chosenKey) {
@@ -162,11 +167,16 @@ async function runGoogleSyncForUser(device: DeviceRecord, deviceRef: FirebaseFir
       chosenLabel = label;
       if (device.activeStatusKey !== chosenKey || device.activeStatusLabel !== chosenLabel) {
         changed = true;
-        await deviceRef.update({
+        const updatePayload: Record<string, unknown> = {
           activeStatusKey: chosenKey,
           activeStatusLabel: chosenLabel,
           updatedAt: Date.now(),
-        });
+        };
+        if (!device.preferredStatusKey && device.activeStatusKey) {
+          updatePayload.preferredStatusKey = device.activeStatusKey;
+          updatePayload.preferredStatusLabel = device.activeStatusLabel ?? null;
+        }
+        await deviceRef.update(updatePayload);
         await pushStatusToTrmnl(device, chosenKey, chosenLabel ?? "");
       }
     }
