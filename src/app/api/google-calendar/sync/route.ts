@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { getOAuthClient, getCalendarClient } from "@/lib/google";
 import { decrypt } from "@/lib/crypto";
 
