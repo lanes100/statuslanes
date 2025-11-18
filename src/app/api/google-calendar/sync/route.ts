@@ -101,6 +101,9 @@ async function runGoogleSyncForUser(device: DeviceRecord, deviceRef: FirebaseFir
   await applyCachedEvents(device, deviceRef, now);
 
   const cacheableEvents: CachedEvent[] = [];
+  if (device.calendarCachedEvents && device.calendarCachedEvents.length > 0) {
+    await deviceRef.update({ calendarCachedEvents: [] });
+  }
 
   for (const calId of calendarIds) {
     const listRes = await calendar.events.list({

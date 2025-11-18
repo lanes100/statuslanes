@@ -93,6 +93,11 @@ export async function POST(request: Request) {
 
       const syncState: SyncState = { syncToken: tokenData.syncToken ?? undefined, lastSyncedAt: tokenData.lastSyncedAt };
       const cacheableEvents: CachedEvent[] = [];
+
+      // Clear stale cache before rebuilding from fresh fetch
+      if (device.calendarCachedEvents && device.calendarCachedEvents.length > 0) {
+        await deviceRef.update({ calendarCachedEvents: [] });
+      }
       // If a previously set calendar status has an end time and we've passed it, revert to idle/preferred before processing new events
       if (device.activeEventEndsAt && now >= device.activeEventEndsAt) {
         const fallbackKey =

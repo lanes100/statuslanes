@@ -34,6 +34,7 @@ type DeviceRecord = {
   preferredStatusKey?: number | null;
   preferredStatusLabel?: string | null;
   calendarIdleUsePreferred?: boolean;
+  calendarCachedEvents?: { start: number; end: number; statusKey: number | null }[];
   activeEventEndsAt?: number | null;
 };
 
@@ -65,6 +66,9 @@ export async function POST() {
 
     const now = Date.now();
     // expire any tracked event end before processing current list
+    if (device.calendarCachedEvents && device.calendarCachedEvents.length > 0) {
+      await deviceRef.update({ calendarCachedEvents: [] });
+    }
     if (device.activeEventEndsAt && now >= device.activeEventEndsAt) {
       const fallbackKey =
         (device.calendarIdleUsePreferred && device.preferredStatusKey) ||

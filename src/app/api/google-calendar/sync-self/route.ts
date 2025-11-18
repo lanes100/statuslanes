@@ -72,6 +72,9 @@ export async function POST() {
 
     const now = Date.now();
     await applyCachedEvents(device, deviceRef, now);
+    if (device.calendarCachedEvents && device.calendarCachedEvents.length > 0) {
+      await deviceRef.update({ calendarCachedEvents: [] });
+    }
     if (device.activeEventEndsAt && now >= device.activeEventEndsAt) {
       const fallbackKey =
         (device.calendarIdleUsePreferred && device.preferredStatusKey) ||

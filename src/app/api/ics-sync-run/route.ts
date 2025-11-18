@@ -22,6 +22,7 @@ type DeviceRecord = {
   preferredStatusKey?: number | null;
   preferredStatusLabel?: string | null;
   calendarIdleUsePreferred?: boolean;
+  calendarCachedEvents?: { start: number; end: number; statusKey: number | null }[];
   activeEventEndsAt?: number | null;
 };
 
@@ -57,6 +58,11 @@ export async function POST(request: Request) {
         if (tData?.refreshToken || tData?.accessToken) {
           continue;
         }
+      }
+
+      // clear stale cache before rebuilding
+      if (device.calendarCachedEvents && device.calendarCachedEvents.length > 0) {
+        await doc.ref.update({ calendarCachedEvents: [] });
       }
 
       let vevents: any[] = [];
