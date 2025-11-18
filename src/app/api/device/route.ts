@@ -106,6 +106,7 @@ export async function PATCH(request: Request) {
     const calendarOooStatusKeyRaw = body?.calendarOooStatusKey;
     const calendarIdleStatusKeyRaw = body?.calendarIdleStatusKey;
     const calendarKeywordStatusKeyRaw = body?.calendarKeywordStatusKey;
+    const calendarVideoStatusKeyRaw = body?.calendarVideoStatusKey;
     const calendarKeywordsRaw = body?.calendarKeywords;
     const calendarIdsRaw = body?.calendarIds;
     const calendarDetectVideoLinksRaw = body?.calendarDetectVideoLinks;
@@ -155,11 +156,13 @@ export async function PATCH(request: Request) {
       const oooKey = parseStatusKey(calendarOooStatusKeyRaw, "Out of office");
       const idleKey = parseStatusKey(calendarIdleStatusKeyRaw, "Default");
       const keywordKey = parseStatusKey(calendarKeywordStatusKeyRaw, "Keyword");
+      const videoKey = parseStatusKey(calendarVideoStatusKeyRaw, "Video link");
 
       if (meetingKey !== undefined) update.calendarMeetingStatusKey = meetingKey;
       if (oooKey !== undefined) update.calendarOooStatusKey = oooKey;
       if (idleKey !== undefined) update.calendarIdleStatusKey = idleKey;
       if (keywordKey !== undefined) update.calendarKeywordStatusKey = keywordKey;
+      if (videoKey !== undefined) update.calendarVideoStatusKey = videoKey;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Invalid calendar status mapping";
       return NextResponse.json({ error: message }, { status: 400 });
@@ -210,6 +213,7 @@ export async function PATCH(request: Request) {
       !("calendarOooStatusKey" in update) &&
       !("calendarIdleStatusKey" in update) &&
       !("calendarKeywordStatusKey" in update) &&
+      !("calendarVideoStatusKey" in update) &&
       !("calendarKeywords" in update) &&
       !("calendarIds" in update) &&
       !("calendarDetectVideoLinks" in update)

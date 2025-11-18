@@ -121,6 +121,7 @@ export async function POST(request: Request) {
         calendarKeywordStatusKey: null,
         calendarIds: [],
         calendarDetectVideoLinks: false,
+        calendarVideoStatusKey: null,
         activeStatusKey: null,
         activeStatusLabel: null,
         createdAt: now,

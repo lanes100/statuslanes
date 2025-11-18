@@ -23,6 +23,7 @@ type Device = {
   calendarKeywords?: string[];
   calendarIds?: string[];
   calendarKeywordStatusKey?: number | null;
+  calendarVideoStatusKey?: number | null;
 };
 
 const getBrowserTimezone = () => {

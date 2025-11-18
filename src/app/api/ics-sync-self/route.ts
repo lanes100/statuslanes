@@ -30,7 +30,11 @@ type DeviceRecord = {
   activeStatusKey?: number | null;
   activeStatusLabel?: string | null;
   calendarDetectVideoLinks?: boolean;
+  calendarVideoStatusKey?: number | null;
 };
+
+const VIDEO_LINK_RE =
+  /(zoom\.us|teams\.microsoft\.com|meet\.google\.com|webex\.com|gotomeeting\.com|bluejeans\.com|ringcentral\.com|whereby\.com|join\.skype\.com|chime\.aws|hopin\.com|join\.me)/i;
 
 export async function POST() {
   try {
@@ -90,8 +94,15 @@ export async function POST() {
       const title = ev.summary ?? "";
       const desc = ev.description ?? "";
       const isAllDay = ev.startDate.isDate;
+      const videoMatch =
+        device.calendarDetectVideoLinks &&
+        ((ev.location ?? "").match(VIDEO_LINK_RE) || (ev.description ?? "").match(VIDEO_LINK_RE));
       if (matchKeyword(title, desc)) {
         chosenKey = device.calendarKeywordStatusKey ?? null;
+        break;
+      }
+      if (videoMatch && device.calendarVideoStatusKey) {
+        chosenKey = device.calendarVideoStatusKey;
         break;
       }
       if (isAllDay && device.calendarOooStatusKey) {

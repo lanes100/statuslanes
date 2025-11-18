@@ -28,6 +28,7 @@ type DeviceRecord = {
   showStatusSource?: boolean;
   webhookUrlEncrypted?: string;
   calendarDetectVideoLinks?: boolean;
+  calendarVideoStatusKey?: number | null;
 };
 
 type GoogleTokenRecord = {
@@ -120,7 +121,7 @@ export async function POST(request: Request) {
       let chosenKey: number | null = null;
       let chosenLabel: string | null = null;
 
-      // Basic priority: keyword > OOO (all-day?) > meeting > idle
+      // Basic priority: keyword > video-link > OOO (all-day?) > timed/busy > idle
       for (const ev of upcoming) {
         const title = ev.summary ?? "";
         const desc = ev.description ?? "";
@@ -132,8 +133,8 @@ export async function POST(request: Request) {
           chosenKey = device.calendarKeywordStatusKey ?? null;
           break;
         }
-        if (videoMatch && device.calendarMeetingStatusKey) {
-          chosenKey = device.calendarMeetingStatusKey;
+        if (videoMatch && device.calendarVideoStatusKey) {
+          chosenKey = device.calendarVideoStatusKey;
           break;
         }
         if (isAllDay && device.calendarOooStatusKey) {
@@ -141,10 +142,10 @@ export async function POST(request: Request) {
           break;
         }
         if (!isAllDay && device.calendarMeetingStatusKey) {
-              chosenKey = device.calendarMeetingStatusKey;
-              break;
-            }
-          }
+          chosenKey = device.calendarMeetingStatusKey;
+          break;
+        }
+      }
 
           if (!chosenKey && device.calendarIdleStatusKey) {
             chosenKey = device.calendarIdleStatusKey;

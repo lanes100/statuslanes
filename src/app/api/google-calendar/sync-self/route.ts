@@ -29,6 +29,7 @@ type DeviceRecord = {
   activeStatusKey?: number | null;
   activeStatusLabel?: string | null;
   calendarDetectVideoLinks?: boolean;
+  calendarVideoStatusKey?: number | null;
 };
 
 export async function POST() {
@@ -104,8 +105,8 @@ export async function POST() {
         chosenKey = device.calendarKeywordStatusKey ?? null;
         break;
       }
-      if (videoMatch && device.calendarMeetingStatusKey) {
-        chosenKey = device.calendarMeetingStatusKey;
+      if (videoMatch && device.calendarVideoStatusKey) {
+        chosenKey = device.calendarVideoStatusKey;
         break;
       }
       if (isAllDay && device.calendarOooStatusKey) {
