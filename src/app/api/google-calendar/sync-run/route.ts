@@ -92,6 +92,7 @@ export async function POST(request: Request) {
       const calendar = getCalendarClient(oauth2Client);
 
       const syncState: SyncState = { syncToken: tokenData.syncToken ?? undefined, lastSyncedAt: tokenData.lastSyncedAt };
+      const cacheableEvents: CachedEvent[] = [];
       // If a previously set calendar status has an end time and we've passed it, revert to idle/preferred before processing new events
       if (device.activeEventEndsAt && now >= device.activeEventEndsAt) {
         const fallbackKey =
