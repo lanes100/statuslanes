@@ -102,7 +102,8 @@ export default function SettingsPanel() {
       await apiFetch("/api/device?id=" + encodeURIComponent(device.deviceId), { method: "DELETE" });
       addToast({ message: "Device removed. Register again to reconnect.", type: "success" });
       setDevice(null);
-      router.refresh();
+      // Hard refresh so the dashboard reruns its fetch and shows the registration form
+      window.location.reload();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to remove device";
       addToast({ message, type: "error" });

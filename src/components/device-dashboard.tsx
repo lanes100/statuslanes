@@ -134,7 +134,8 @@ export default function DeviceDashboard() {
               await apiFetch("/api/register-device", { method: "POST", body: JSON.stringify(body) });
               setPluginId("");
               addToast({ message: "Plugin saved", type: "success" });
-              fetchDevices();
+              // Full reload so settings and dashboard re-fetch from a clean state after registration
+              window.location.reload();
             } catch (err) {
               const message = err instanceof Error ? err.message : "Failed to register device";
               addToast({ message, type: "error" });
