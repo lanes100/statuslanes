@@ -21,6 +21,7 @@ type Device = {
   calendarOooStatusKey?: number | null;
   calendarIdleStatusKey?: number | null;
   calendarKeywords?: string[];
+  calendarIds?: string[];
 };
 
 const getBrowserTimezone = () => {

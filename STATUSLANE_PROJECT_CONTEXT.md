@@ -440,13 +440,34 @@ Stored in `webhook_url_encrypted`.
   - `POST /api/set-status` now sends `merge_variables` with `status_text`, `status_source`, `show_last_updated`, `show_status_source`, `timezone`, `time_format`, `date_format`, `updated_at` formatted per user settings; no reliance on status_key.
 - Frontend:
   - Home shows auth state; simplified layout; status line reads “I am {status}”; active buttons use lighter selected color; empty statuses hidden.
-  - Device dashboard: edit statuses inline, add up to 12, delete per-row; “Save and close” toggles on the same button; silent fetch reduces flicker.
-  - Settings panel: toggles for show_last_updated/on by default and show_status_source/off by default, timezone picker, time/date format selectors; full dark mode.
-  - Login: full dark mode, forgot-password link sends reset email; new `/reset-password` page verifies oobCode and lets user set a new password; middleware allows `/reset-password`.
-  - PWA manifest and icons (`public/icon-192.png`, `icon-512.png`) set for add-to-home-screen.
+- Device dashboard: edit statuses inline, add up to 12, delete per-row; “Save and close” toggles on the same button; silent fetch reduces flicker.
+- Settings panel: toggles for show_last_updated/on by default and show_status_source/off by default, timezone picker, time/date format selectors; full dark mode.
+- Login: full dark mode, forgot-password link sends reset email; new `/reset-password` page verifies oobCode and lets user set a new password; middleware allows `/reset-password`.
+- PWA manifest and icons (`public/icon-192.png`, `icon-512.png`) set for add-to-home-screen.
 - Client UX improvements:
   - API fetch wrapper with light retry for 429/5xx and toast shelf with improved spacing; error suppressed when settings missing for unregistered device.
 - Ops: `.env.local` requires Firebase client/server creds plus `WEBHOOK_SECRET_KEY`; set `NEXT_PUBLIC_APP_URL` to your deployed URL for reset links; add your domain to Firebase Auth Authorized domains. Icon assets live in `public/`.
+
+## **Recent additions (Google auth + Calendar sync groundwork)**
+
+- Google Sign-In added on `/login` using Firebase `signInWithPopup` → `/api/login` session cookie.
+- Google Calendar OAuth endpoints:
+  - `/api/google-calendar/auth` (returns auth URL)
+  - `/api/google-calendar/callback` (stores tokens in `google_tokens` collection per user)
+  - `/api/google-calendar/status` (connected flag)
+  - `/api/google-calendar/calendars` (lists available calendars with stored tokens)
+  - `/api/google-calendar/sync` (queues manual sync via timestamp flag)
+- Device schema updates (Firestore `devices`):
+  - `calendarIcsUrl`, `calendarMeetingStatusKey`, `calendarOooStatusKey`, `calendarIdleStatusKey`
+  - `calendarKeywords` (array of strings)
+  - `calendarIds` (array of selected Google calendar IDs)
+- Settings UI:
+  - Google Calendar connect/reconnect and manual sync button; shows connection status
+  - Calendar list with checkboxes to select which calendars to sync (when connected)
+  - ICS URL input, keyword filters, status mappings (meeting/OOO/idle) and manual ICS sync button
+- Manual ICS sync flag endpoint `/api/sync-trmnl` (marks `calendarManualSyncRequestedAt`)
+- Dependency: `googleapis` added.
+- TODO: implement actual Google Calendar/ICS sync worker to fetch events from selected calendars, apply keyword-based mapping, and push statuses (5-minute pre-event rule mentioned).
 
 ## End of file
 ## End of file

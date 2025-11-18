@@ -17,6 +17,7 @@ type DeviceSettings = {
   calendarIdleStatusKey?: number | null;
   statuses?: { key: number; label: string; enabled: boolean }[];
   calendarKeywords?: string[];
+  calendarIds?: string[];
 };
 
 const getBrowserTimezone = () => {
@@ -81,6 +82,7 @@ export default function SettingsPanel() {
             calendarIdleStatusKey?: number | null;
             statuses?: { key: number; label: string; enabled: boolean }[];
             calendarKeywords?: string[];
+            calendarIds?: string[];
           };
         }>("/api/device");
         setDevice({
