@@ -20,6 +20,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [socialLoading, setSocialLoading] = useState(false);
+  const [acceptedPolicy, setAcceptedPolicy] = useState(false);
   const router = useRouter();
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -28,6 +29,11 @@ export default function LoginPage() {
     setError(null);
 
     try {
+      if (mode === "signup" && !acceptedPolicy) {
+        setError("Please agree to the Privacy Policy to create an account.");
+        setLoading(false);
+        return;
+      }
       const auth = getFirebaseAuth();
       const appUrl =
         typeof window !== "undefined"
@@ -75,6 +81,11 @@ export default function LoginPage() {
     setError(null);
     setSocialLoading(true);
     try {
+      if (mode === "signup" && !acceptedPolicy) {
+        setError("Please agree to the Privacy Policy to continue.");
+        setSocialLoading(false);
+        return;
+      }
       const auth = getFirebaseAuth();
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
@@ -152,6 +163,24 @@ export default function LoginPage() {
 
           {error && <p className="text-sm text-red-400">{error}</p>}
 
+          {mode === "signup" && (
+            <label className="flex items-start gap-2 text-xs text-zinc-200">
+              <input
+                type="checkbox"
+                checked={acceptedPolicy}
+                onChange={(e) => setAcceptedPolicy(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-zinc-100 focus:ring-2 focus:ring-white/30"
+              />
+              <span>
+                I agree to the{" "}
+                <a href="/about" target="_blank" rel="noreferrer" className="font-semibold text-zinc-100 underline">
+                  Privacy Policy
+                </a>
+                .
+              </span>
+            </label>
+          )}
+
           <button
             type="submit"
             disabled={loading}
@@ -176,7 +205,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={signInWithGoogle}
-            disabled={socialLoading}
+            disabled={socialLoading || (mode === "signup" && !acceptedPolicy)}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" aria-hidden="true" className="h-5 w-5">
@@ -218,6 +247,11 @@ export default function LoginPage() {
               Back to sign in
             </button>
           )}
+          <div className="mt-3 text-xs text-zinc-400">
+            <a href="/about" className="underline hover:text-zinc-200">
+              Privacy Policy
+            </a>
+          </div>
         </div>
       </div>
     </div>

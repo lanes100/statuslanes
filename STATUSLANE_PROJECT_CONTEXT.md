@@ -1,6 +1,6 @@
 # STATUSLANE_PROJECT_CONTEXT.md
 
-# **StatusLane — TRMNL Status Plugin + Web App**
+# **StatusLanes — TRMNL Status Plugin + Web App**
 
 Comprehensive context for coding assistant.
 

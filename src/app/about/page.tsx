@@ -1,10 +1,18 @@
+import Link from "next/link";
+
 export default function AboutPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-6 py-10 text-zinc-900 dark:text-zinc-100">
+      <Link
+        href="/"
+        className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 shadow-sm transition hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+      >
+        ← Back
+      </Link>
       <div className="space-y-2">
-        <h1 className="text-2xl font-semibold">About StatusLane</h1>
+        <h1 className="text-2xl font-semibold">About StatusLanes</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-300">
-          StatusLane connects your calendars to your TRMNL so your status updates automatically. We only ever read your
+          StatusLanes connects your calendars to your TRMNL so your status updates automatically. We only ever read your
           calendar data to derive a status (busy, out of office, video, keyword match) and never write back to your
           calendars.
         </p>
@@ -27,7 +35,7 @@ export default function AboutPage() {
           </li>
           <li>
             <strong>Sharing:</strong> We do not sell or share your data with third parties. Data is only used to deliver
-            StatusLane features.
+            StatusLanes features.
           </li>
           <li>
             <strong>Removal:</strong> You can disconnect Google Calendar anytime, delete your device in Settings, or
@@ -40,8 +48,8 @@ export default function AboutPage() {
         <h3 className="text-base font-semibold">Contact</h3>
         <p className="text-zinc-700 dark:text-zinc-200">
           Questions about privacy or data removal? Email us at{" "}
-          <a className="font-semibold underline" href="mailto:support@statuslane.app">
-            support@statuslane.app
+          <a className="font-semibold underline" href="mailto:support@statuslanes.app">
+            support@statuslanes.app
           </a>
           .
         </p>
