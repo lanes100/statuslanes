@@ -348,7 +348,7 @@ export default function SettingsPanel() {
             Connect Google Calendar or paste an ICS feed. Timed events use “Meetings map to”, all-day events use “Out of office map to”, and keyword matches use “Keyword matches map to”.
           </p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
+        <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -358,30 +358,34 @@ export default function SettingsPanel() {
                   ? "bg-red-50 text-red-700 ring-red-200 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-100 dark:ring-red-800"
                   : "bg-white text-zinc-800 ring-zinc-200 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-700 dark:hover:bg-zinc-700"
               }`}
-              onClickCapture={googleConnected ? async () => {
-                try {
-                  await apiFetch("/api/google-calendar/disconnect", { method: "POST" });
-                  setGoogleConnected(false);
-                  setGoogleCalendars([]);
-                  setCalendarSelection([]);
-                  setGoogleLastSynced(null);
-                  addToast({ message: "Google disconnected", type: "success" });
-                } catch (err) {
-                  const message = err instanceof Error ? err.message : "Failed to disconnect";
-                  addToast({ message, type: "error" });
-                }
-              } : undefined}
+              onClickCapture={
+                googleConnected
+                  ? async () => {
+                      try {
+                        await apiFetch("/api/google-calendar/disconnect", { method: "POST" });
+                        setGoogleConnected(false);
+                        setGoogleCalendars([]);
+                        setCalendarSelection([]);
+                        setGoogleLastSynced(null);
+                        addToast({ message: "Google disconnected", type: "success" });
+                      } catch (err) {
+                        const message = err instanceof Error ? err.message : "Failed to disconnect";
+                        addToast({ message, type: "error" });
+                      }
+                    }
+                  : undefined
+              }
             >
               {googleConnected ? "Disconnect Google" : "Connect Google Calendar"}
             </button>
+            {googleConnected !== null && (
+              <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                {googleConnected ? "Connected" : "Not connected"}
+              </span>
+            )}
           </div>
-          {googleConnected !== null && (
-            <span className="text-xs text-zinc-600 dark:text-zinc-400">
-              {googleConnected ? "Connected" : "Not connected"}
-            </span>
-          )}
           {googleConnected ? (
-            <div className="mt-2 flex flex-col items-start gap-2">
+            <div className="flex flex-col items-start gap-2">
               <button
                 type="button"
                 onClick={syncGoogleCalendar}
@@ -399,8 +403,7 @@ export default function SettingsPanel() {
                 {loadingCalendars ? "Refreshing…" : "Refresh calendars"}
               </button>
               <div className="text-[11px] text-zinc-600 dark:text-zinc-400">
-                Last synced:{" "}
-                {googleLastSynced ? new Date(googleLastSynced).toLocaleString() : "Not yet synced"}
+                Last synced: {googleLastSynced ? new Date(googleLastSynced).toLocaleString() : "Not yet synced"}
               </div>
             </div>
           ) : null}
