@@ -105,6 +105,7 @@ export async function PATCH(request: Request) {
     const calendarMeetingStatusKeyRaw = body?.calendarMeetingStatusKey;
     const calendarOooStatusKeyRaw = body?.calendarOooStatusKey;
     const calendarIdleStatusKeyRaw = body?.calendarIdleStatusKey;
+    const calendarKeywordsRaw = body?.calendarKeywords;
     if (typeof timezone === "string") {
       update.timezone = timezone;
     }
@@ -159,6 +160,21 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: message }, { status: 400 });
     }
 
+    if (calendarKeywordsRaw !== undefined) {
+      const keywords: string[] =
+        typeof calendarKeywordsRaw === "string"
+          ? calendarKeywordsRaw
+              .split(",")
+              .map((s) => s.trim())
+              .filter((s) => s.length > 0)
+          : Array.isArray(calendarKeywordsRaw)
+            ? (calendarKeywordsRaw as unknown[])
+                .map((s) => (typeof s === "string" ? s.trim() : ""))
+                .filter((s) => s.length > 0)
+            : [];
+      update.calendarKeywords = keywords.slice(0, 20);
+    }
+
     if (
       !update.statuses &&
       !("showLastUpdated" in update) &&
@@ -169,7 +185,8 @@ export async function PATCH(request: Request) {
       !("calendarIcsUrl" in update) &&
       !("calendarMeetingStatusKey" in update) &&
       !("calendarOooStatusKey" in update) &&
-      !("calendarIdleStatusKey" in update)
+      !("calendarIdleStatusKey" in update) &&
+      !("calendarKeywords" in update)
     ) {
       return NextResponse.json({ error: "No updates provided" }, { status: 400 });
     }

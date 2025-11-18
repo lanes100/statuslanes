@@ -6,6 +6,8 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebaseClient";
 
@@ -17,6 +19,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [socialLoading, setSocialLoading] = useState(false);
   const router = useRouter();
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -65,6 +68,32 @@ export default function LoginPage() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    setError(null);
+    setSocialLoading(true);
+    try {
+      const auth = getFirebaseAuth();
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const idToken = await result.user.getIdToken();
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to create session");
+      }
+      router.push("/");
+      router.refresh();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Google sign-in failed";
+      setError(message);
+    } finally {
+      setSocialLoading(false);
     }
   };
 
@@ -137,6 +166,41 @@ export default function LoginPage() {
                   : "Send reset email"}
           </button>
         </form>
+
+        <div className="mt-4">
+          <div className="relative my-3 flex items-center">
+            <div className="h-px flex-1 bg-zinc-800" />
+            <span className="px-3 text-xs uppercase tracking-[0.2em] text-zinc-500">or</span>
+            <div className="h-px flex-1 bg-zinc-800" />
+          </div>
+          <button
+            type="button"
+            onClick={signInWithGoogle}
+            disabled={socialLoading}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" aria-hidden="true" className="h-5 w-5">
+              <path
+                fill="#EA4335"
+                d="M24 9.5c3.28 0 6.23 1.13 8.55 3.35l6.39-6.39C35.16 2.58 29.96 0 24 0 14.62 0 6.55 5.38 2.56 13.22l7.45 5.79C11.82 12.01 17.31 9.5 24 9.5z"
+              />
+              <path
+                fill="#4285F4"
+                d="M46.5 24.5c0-1.57-.14-3.08-.41-4.5H24v9.1h12.65c-.55 2.98-2.23 5.5-4.75 7.2l7.45 5.78C43.93 38.93 46.5 32.27 46.5 24.5z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M10.01 28.41A14.5 14.5 0 0 1 9.5 24c0-1.52.26-2.99.73-4.38l-7.45-5.79A23.932 23.932 0 0 0 0 24c0 3.89.93 7.56 2.56 10.89l7.45-5.79z"
+              />
+              <path
+                fill="#34A853"
+                d="M24 48c6.48 0 11.91-2.13 15.88-5.79l-7.45-5.78C30.45 37.83 27.39 39 24 39c-6.69 0-12.18-4.51-13.99-10.59l-7.45 5.79C6.55 42.62 14.62 48 24 48z"
+              />
+              <path fill="none" d="M0 0h48v48H0z" />
+            </svg>
+            {socialLoading ? "Signing in..." : "Continue with Google"}
+          </button>
+        </div>
 
         <div className="mt-4 text-sm text-zinc-300">
           {mode === "login" && (

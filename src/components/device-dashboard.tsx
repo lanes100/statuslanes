@@ -20,6 +20,7 @@ type Device = {
   calendarMeetingStatusKey?: number | null;
   calendarOooStatusKey?: number | null;
   calendarIdleStatusKey?: number | null;
+  calendarKeywords?: string[];
 };
 
 const getBrowserTimezone = () => {

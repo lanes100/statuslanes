@@ -16,6 +16,7 @@ type DeviceSettings = {
   calendarOooStatusKey?: number | null;
   calendarIdleStatusKey?: number | null;
   statuses?: { key: number; label: string; enabled: boolean }[];
+  calendarKeywords?: string[];
 };
 
 const getBrowserTimezone = () => {
@@ -75,6 +76,7 @@ export default function SettingsPanel() {
             calendarOooStatusKey?: number | null;
             calendarIdleStatusKey?: number | null;
             statuses?: { key: number; label: string; enabled: boolean }[];
+            calendarKeywords?: string[];
           };
         }>("/api/device");
         setDevice({
@@ -89,6 +91,7 @@ export default function SettingsPanel() {
           calendarOooStatusKey: res.device.calendarOooStatusKey ?? null,
           calendarIdleStatusKey: res.device.calendarIdleStatusKey ?? null,
           statuses: res.device.statuses ?? [],
+          calendarKeywords: res.device.calendarKeywords ?? [],
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load settings";
@@ -122,6 +125,7 @@ export default function SettingsPanel() {
           calendarMeetingStatusKey: device.calendarMeetingStatusKey,
           calendarOooStatusKey: device.calendarOooStatusKey,
           calendarIdleStatusKey: device.calendarIdleStatusKey,
+          calendarKeywords: device.calendarKeywords ?? [],
         }),
       });
       addToast({ message: "Settings updated", type: "success" });
@@ -130,6 +134,18 @@ export default function SettingsPanel() {
       addToast({ message, type: "error" });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const startGoogleConnect = async () => {
+    try {
+      const res = await apiFetch<{ url: string }>("/api/google-calendar/auth");
+      if (res.url) {
+        window.location.href = res.url;
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to start Google auth";
+      addToast({ message, type: "error" });
     }
   };
 
@@ -248,6 +264,19 @@ export default function SettingsPanel() {
             className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-white dark:focus:ring-white/10"
           />
         </div>
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">Keyword filters (comma separated)</label>
+          <input
+            type="text"
+            placeholder="project x, client y, out of office"
+            value={(device.calendarKeywords ?? []).join(", ")}
+            onChange={(e) => setDevice({ ...device, calendarKeywords: e.target.value.split(",").map((s) => s.trim()) })}
+            className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-white dark:focus:ring-white/10"
+          />
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            If an event title/description contains any keyword, it will use your calendar mapping.
+          </p>
+        </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="space-y-1">
             <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">Meetings map to</label>
@@ -296,6 +325,23 @@ export default function SettingsPanel() {
               ))}
             </select>
           </div>
+        </div>
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await apiFetch("/api/sync-trmnl", { method: "POST" });
+                addToast({ message: "Calendar sync queued", type: "success" });
+              } catch (err) {
+                const message = err instanceof Error ? err.message : "Failed to sync calendar";
+                addToast({ message, type: "error" });
+              }
+            }}
+            className="rounded-md bg-zinc-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          >
+            Sync calendar now
+          </button>
         </div>
       </div>
 

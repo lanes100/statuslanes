@@ -117,6 +117,7 @@ export async function POST(request: Request) {
         calendarMeetingStatusKey: null,
         calendarOooStatusKey: null,
         calendarIdleStatusKey: null,
+        calendarKeywords: [],
         activeStatusKey: null,
         activeStatusLabel: null,
         createdAt: now,
