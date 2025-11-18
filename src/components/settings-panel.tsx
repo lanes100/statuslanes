@@ -51,6 +51,7 @@ export default function SettingsPanel() {
   const [calendarSelection, setCalendarSelection] = useState<string[]>([]);
   const { toasts, addToast, removeToast } = useToast();
   const [loadingCalendars, setLoadingCalendars] = useState(false);
+  const [calendarLoadError, setCalendarLoadError] = useState<string | null>(null);
   const timezones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [];
   const browserTimezone = getBrowserTimezone();
   const browserTimeFormat = detectDeviceTimeFormat();
@@ -127,6 +128,7 @@ export default function SettingsPanel() {
         }
       } catch {
         setGoogleConnected(false);
+        setCalendarLoadError("Not connected to Google Calendar");
       }
     };
     fetchGoogleStatus();
@@ -190,15 +192,22 @@ export default function SettingsPanel() {
 
   const refreshGoogleCalendars = async () => {
     setLoadingCalendars(true);
+    setCalendarLoadError(null);
     try {
       const calRes = await apiFetch<{ calendars: { id: string; summary: string; primary?: boolean }[] }>(
         "/api/google-calendar/calendars",
         { retry: false }
       );
       setGoogleCalendars(calRes.calendars || []);
+      if (!calRes.calendars || calRes.calendars.length === 0) {
+        setCalendarLoadError("No calendars returned for this account.");
+      }
     } catch (err) {
       console.error("calendar fetch failed", err);
       setGoogleCalendars([]);
+      const message = err instanceof Error ? err.message : "Failed to load calendars";
+      setCalendarLoadError(message);
+      addToast({ message, type: "error" });
     } finally {
       setLoadingCalendars(false);
     }
@@ -375,6 +384,8 @@ export default function SettingsPanel() {
               })}
             </div>
           </div>
+        ) : googleConnected && calendarLoadError ? (
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">{calendarLoadError}</p>
         ) : null}
         <div className="space-y-2">
           <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">ICS URL</label>
