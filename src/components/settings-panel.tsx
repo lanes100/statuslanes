@@ -400,7 +400,7 @@ export default function SettingsPanel() {
                 disabled={syncingGoogle}
                 className="rounded-md bg-zinc-900 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
               >
-                {syncingGoogle ? "Syncing…" : "Sync ICS calendar now"}
+                {syncingGoogle ? "Syncing…" : "Sync Google now"}
               </button>
               <div className="text-[11px] text-zinc-600 dark:text-zinc-400">
                 Last synced: {googleLastSynced ? new Date(googleLastSynced).toLocaleString() : "Not yet synced"}
