@@ -292,7 +292,7 @@ export default function DeviceDashboard() {
           {savingStatuses ? <p className="text-xs text-zinc-500">Saving…</p> : null}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3">
           {device.statuses
             .filter((s) => s.enabled && s.label.trim().length > 0)
             .map(({ key, label }) => {
@@ -303,12 +303,12 @@ export default function DeviceDashboard() {
                   key={key}
                   onClick={() => setStatus(key, label)}
                   disabled={isPending}
-                  className={`rounded-xl px-3 py-3 text-sm font-semibold shadow-sm transition ${
+                  className={`flex h-full min-h-[76px] items-center justify-center rounded-xl px-4 py-4 text-center text-sm font-semibold leading-snug shadow-sm transition ${
                     isActive
                       ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-50"
                       : "bg-zinc-100 text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
                   } ${isPending ? "opacity-70" : ""}`}
-                  style={{ minHeight: 56 }}
+                  style={{ wordBreak: "break-word", lineHeight: 1.2 }}
                 >
                   {label}
                 </button>
