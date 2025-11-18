@@ -23,6 +23,7 @@ type DeviceRecord = {
   preferredStatusKey?: number | null;
   preferredStatusLabel?: string | null;
   calendarIdleUsePreferred?: boolean;
+  calendarCachedEvents?: CachedEvent[];
   activeEventEndsAt?: number | null;
   lastIcsSyncedAt?: number | null;
   timezone?: string;
@@ -48,6 +49,7 @@ type GoogleTokenRecord = {
 };
 
 const BATCH_USERS = 5;
+type CachedEvent = { start: number; end: number; statusKey: number | null };
 
 export async function POST(request: Request) {
   const secret = process.env.SYNC_SECRET;
@@ -74,6 +76,9 @@ export async function POST(request: Request) {
 
       const calendarIds = device.calendarIds ?? [];
       if (calendarIds.length === 0) continue;
+
+      // Apply cached events (same-day) before new fetch
+      const cachedChanged = await applyCachedEvents(device, deviceRef, now);
 
       // Prepare auth
       const oauth2Client = getOAuthClient();
@@ -142,6 +147,7 @@ export async function POST(request: Request) {
             const endTs = new Date(end).getTime();
             return endTs > now - 5 * 60 * 1000 && startTs < now + 60 * 60 * 1000; // window around now
           });
+          cacheableEvents.push(...mapEventsForCache(events, device));
 
       const keywordList = (device.calendarKeywords ?? []).map((s) => s.toLowerCase());
       const matchKeyword = device.calendarKeywordStatusKey
@@ -267,6 +273,9 @@ export async function POST(request: Request) {
         .collection("google_tokens")
         .doc(userId)
         .update({ syncToken: syncState.syncToken ?? null, lastSyncedAt: now, manualSyncRequestedAt: null });
+
+      // After processing all calendars, update cache for today
+      await deviceRef.update({ calendarCachedEvents: buildSameDayCache(cacheableEvents, now) });
     }
 
     return NextResponse.json({ ok: true }, { status: 200 });
@@ -339,3 +348,82 @@ function formatTimestamp(timestamp: number, timezone: string, dateFormat: string
 
 const VIDEO_LINK_RE =
   /(zoom\.us|teams\.microsoft\.com|meet\.google\.com|webex\.com|gotomeeting\.com|bluejeans\.com|ringcentral\.com|whereby\.com|join\.skype\.com|chime\.aws|hopin\.com|join\.me)/i;
+
+function buildSameDayCache(events: { start: number; end: number; statusKey: number | null }[], now: number): CachedEvent[] {
+  const startOfDay = new Date(now).setHours(0, 0, 0, 0);
+  const endOfDay = new Date(now).setHours(23, 59, 59, 999);
+  return events
+    .filter((e) => e.start >= startOfDay && e.start <= endOfDay && e.end >= now)
+    .sort((a, b) => a.start - b.start)
+    .slice(0, 10);
+}
+
+async function applyCachedEvents(device: DeviceRecord, deviceRef: FirebaseFirestore.DocumentReference, now: number) {
+  const cached = (device.calendarCachedEvents ?? []).filter((e) => e.end > now);
+  if (cached.length === 0) {
+    if ((device.calendarCachedEvents?.length ?? 0) > 0) await deviceRef.update({ calendarCachedEvents: [] });
+    return false;
+  }
+  cached.sort((a, b) => a.start - b.start);
+  let chosen: CachedEvent | null = null;
+  for (const ev of cached) {
+    if (now >= ev.start && now <= ev.end) {
+      chosen = ev;
+      break;
+    }
+  }
+  if (!chosen) {
+    await deviceRef.update({ calendarCachedEvents: cached });
+    return false;
+  }
+  const label =
+    device.statuses?.find((s) => s.key === chosen.statusKey)?.label ??
+    (chosen.statusKey === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
+  if (device.activeStatusKey !== chosen.statusKey || device.activeStatusLabel !== label) {
+    await deviceRef.update({
+      activeStatusKey: chosen.statusKey,
+      activeStatusLabel: label ?? null,
+      activeEventEndsAt: chosen.end,
+      calendarCachedEvents: cached,
+      updatedAt: now,
+    });
+    await pushStatusToTrmnl(device, chosen.statusKey, label ?? "");
+    return true;
+  }
+  await deviceRef.update({ calendarCachedEvents: cached });
+  return false;
+}
+
+function mapEventsForCache(events: any[], device: DeviceRecord): CachedEvent[] {
+  const keywordList = (device.calendarKeywords ?? []).map((s) => s.toLowerCase());
+  const matchKeyword = device.calendarKeywordStatusKey
+    ? (title: string, desc: string) => {
+        const hay = `${title} ${desc}`.toLowerCase();
+        return keywordList.some((k) => hay.includes(k));
+      }
+    : () => false;
+
+  const mapped: CachedEvent[] = [];
+  for (const ev of events) {
+    const startRaw = ev.start?.dateTime ?? ev.start?.date;
+    const endRaw = ev.end?.dateTime ?? ev.end?.date;
+    if (!startRaw || !endRaw) continue;
+    const startTs = new Date(startRaw).getTime();
+    const endTs = new Date(endRaw).getTime();
+    const title = ev.summary ?? "";
+    const desc = ev.description ?? "";
+    const isAllDay = Boolean(ev.start?.date);
+    const videoMatch =
+      device.calendarDetectVideoLinks &&
+      ((ev.location ?? "").match(VIDEO_LINK_RE) || (ev.description ?? "").match(VIDEO_LINK_RE));
+    let key: number | null = null;
+    if (matchKeyword(title, desc)) key = device.calendarKeywordStatusKey ?? null;
+    else if (videoMatch && device.calendarVideoStatusKey) key = device.calendarVideoStatusKey;
+    else if (isAllDay && device.calendarOooStatusKey) key = device.calendarOooStatusKey;
+    else if (!isAllDay && device.calendarMeetingStatusKey) key = device.calendarMeetingStatusKey;
+    else if (device.calendarIdleUsePreferred && device.preferredStatusKey) key = device.preferredStatusKey;
+    else if (device.calendarIdleStatusKey) key = device.calendarIdleStatusKey;
+    mapped.push({ start: startTs, end: endTs, statusKey: key });
+  }
+  return mapped;
+}

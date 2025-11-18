@@ -59,4 +59,7 @@ Comprehensive context for coding assistant.
 - Settings UI exposes “Previous manual selection” for idle, video mapping select, clearer labels; Google action buttons layout adjusted and light-gray styling.
 - Calendar sync logic stores event end times and extends through back-to-back events with the same mapping (Google bulk/manual/self and ICS bulk/self) to avoid dropping status between consecutive meetings.
 
+## Next action item
+- Create/use a dedicated production Google OAuth Web client without loopback/localhost redirects to clear the “Use secure flows” warning. Add only prod origins/redirects, move localhost to a separate dev client, and point prod `GOOGLE_CLIENT_ID/SECRET` at the clean client.
+
 ## End of file
