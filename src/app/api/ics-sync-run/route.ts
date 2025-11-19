@@ -82,7 +82,7 @@ export async function POST(request: Request) {
       const upcoming = vevents.filter((ev) => {
         const start = ev.startDate.toJSDate().getTime();
         const end = ev.endDate.toJSDate().getTime();
-        return end > now - 5 * 60 * 1000 && start < now + 60 * 60 * 1000;
+        return end > now - 5 * 60 * 1000 && start < now + 5 * 60 * 1000;
       });
       if (device.activeEventEndsAt && now >= device.activeEventEndsAt) {
         const fallbackKey =

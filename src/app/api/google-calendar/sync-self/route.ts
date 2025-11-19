@@ -118,14 +118,14 @@ export async function POST() {
 
       const events = listRes.data.items ?? [];
       cacheableEvents.push(...mapEventsForCache(events, device));
-      const upcoming = events.filter((ev) => {
-        const start = ev.start?.dateTime ?? ev.start?.date;
-        const end = ev.end?.dateTime ?? ev.end?.date;
-        if (!start || !end) return false;
-        const startTs = new Date(start).getTime();
-        const endTs = new Date(end).getTime();
-        return endTs > now - 5 * 60 * 1000 && startTs < now + 60 * 60 * 1000;
-      });
+    const upcoming = events.filter((ev) => {
+      const start = ev.start?.dateTime ?? ev.start?.date;
+      const end = ev.end?.dateTime ?? ev.end?.date;
+      if (!start || !end) return false;
+      const startTs = new Date(start).getTime();
+      const endTs = new Date(end).getTime();
+      return endTs > now - 5 * 60 * 1000 && startTs < now + 5 * 60 * 1000;
+    });
 
     const keywordList = (device.calendarKeywords ?? []).map((s) => s.toLowerCase());
     const matchKeyword = device.calendarKeywordStatusKey

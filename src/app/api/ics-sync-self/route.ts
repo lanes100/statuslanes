@@ -114,7 +114,7 @@ export async function POST() {
     const upcoming = vevents.filter((ev) => {
       const start = ev.startDate.toJSDate().getTime();
       const end = ev.endDate.toJSDate().getTime();
-      return end > now - 5 * 60 * 1000 && start < now + 60 * 60 * 1000;
+      return end > now - 5 * 60 * 1000 && start < now + 5 * 60 * 1000;
     });
 
     const keywordList = (device.calendarKeywords ?? []).map((s) => s.toLowerCase());
