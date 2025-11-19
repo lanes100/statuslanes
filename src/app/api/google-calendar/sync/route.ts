@@ -125,7 +125,7 @@ async function runGoogleSyncForUser(device: DeviceRecord, deviceRef: FirebaseFir
       if (!start || !end) return false;
       const startTs = new Date(start).getTime();
       const endTs = new Date(end).getTime();
-      return endTs > now - 5 * 60 * 1000 && startTs < now + 60 * 60 * 1000;
+      return endTs > now - 5 * 60 * 1000 && startTs < now + 5 * 60 * 1000;
     });
 
     const keywordList = (device.calendarKeywords ?? []).map((s) => s.toLowerCase());

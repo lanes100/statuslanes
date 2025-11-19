@@ -153,7 +153,7 @@ export async function POST(request: Request) {
             if (!start || !end) return false;
             const startTs = new Date(start).getTime();
             const endTs = new Date(end).getTime();
-            return endTs > now - 5 * 60 * 1000 && startTs < now + 60 * 60 * 1000; // window around now
+            return endTs > now - 5 * 60 * 1000 && startTs < now + 5 * 60 * 1000; // window around now
           });
           cacheableEvents.push(...mapEventsForCache(events, device));
 
