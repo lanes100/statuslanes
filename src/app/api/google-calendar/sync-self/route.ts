@@ -35,6 +35,7 @@ type DeviceRecord = {
   calendarIdleUsePreferred?: boolean;
   calendarCachedEvents?: CachedEvent[];
   activeEventEndsAt?: number | null;
+  activeStatusSource?: string | null;
 };
 
 type CachedEvent = { start: number; end: number; statusKey: number | null };
@@ -220,6 +221,7 @@ export async function POST() {
         const updatePayload: Record<string, unknown> = {
           activeStatusKey: chosenKey,
           activeStatusLabel: chosenLabel,
+          activeStatusSource: "Google Calendar",
           activeEventEndsAt: chosenEndsAt ?? null,
           updatedAt: Date.now(),
         };
@@ -333,6 +335,7 @@ async function applyCachedEvents(device: DeviceRecord, deviceRef: FirebaseFirest
         await deviceRef.update({
           activeStatusKey: ev.statusKey,
           activeStatusLabel: label ?? null,
+          activeStatusSource: "Google Calendar",
           activeEventEndsAt: ev.end,
           calendarCachedEvents: cached,
           updatedAt: now,

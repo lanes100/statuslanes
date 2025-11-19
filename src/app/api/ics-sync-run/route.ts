@@ -16,6 +16,7 @@ type DeviceRecord = {
   statuses?: { key: number; label: string; enabled: boolean }[];
   activeStatusKey?: number | null;
   activeStatusLabel?: string | null;
+  activeStatusSource?: string | null;
   lastIcsSyncedAt?: number | null;
   calendarDetectVideoLinks?: boolean;
   calendarVideoStatusKey?: number | null;
@@ -201,6 +202,7 @@ export async function POST(request: Request) {
             activeStatusLabel: chosenLabel,
             updatedAt: Date.now(),
             lastIcsSyncedAt: Date.now(),
+            activeStatusSource: "ICS",
             activeEventEndsAt: chosenEndsAt ?? null,
           };
           if (!device.preferredStatusKey && device.activeStatusKey) {

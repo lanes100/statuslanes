@@ -126,6 +126,7 @@ export async function POST(request: Request) {
         calendarIdleStatusKey: null,
         activeStatusKey: null,
         activeStatusLabel: null,
+        activeStatusSource: null,
         createdAt: now,
         updatedAt: now,
       });

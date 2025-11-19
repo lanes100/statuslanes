@@ -66,6 +66,7 @@ type DeviceRecord = {
   activeStatusLabel?: string | null;
   preferredStatusKey?: number | null;
   preferredStatusLabel?: string | null;
+  activeStatusSource?: string | null;
   calendarIdleUsePreferred?: boolean;
   calendarDetectVideoLinks?: boolean;
   calendarVideoStatusKey?: number | null;
@@ -227,6 +228,7 @@ async function runGoogleSyncForUser(device: DeviceRecord, deviceRef: FirebaseFir
         const updatePayload: Record<string, unknown> = {
           activeStatusKey: chosenKey,
           activeStatusLabel: chosenLabel,
+          activeStatusSource: "Google Calendar",
           activeEventEndsAt: chosenEndsAt ?? null,
           updatedAt: Date.now(),
         };
@@ -338,6 +340,7 @@ async function applyCachedEvents(device: DeviceRecord, deviceRef: FirebaseFirest
     await deviceRef.update({
       activeStatusKey: chosen.statusKey,
       activeStatusLabel: label ?? null,
+      activeStatusSource: "Google Calendar",
       activeEventEndsAt: chosen.end,
       calendarCachedEvents: cached,
       updatedAt: now,

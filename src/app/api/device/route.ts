@@ -235,6 +235,25 @@ export async function PATCH(request: Request) {
     const webhookUrlEncrypted = data.webhookUrlEncrypted as string | undefined;
     if (webhookUrlEncrypted) {
       const webhookUrl = decrypt(webhookUrlEncrypted);
+      const latestStatusLabel =
+        (refreshedData?.activeStatusLabel as string | null) ??
+        (data.activeStatusLabel as string | null) ??
+        null;
+      const latestStatusSource =
+        (refreshedData?.activeStatusSource as string | null) ??
+        (data as any)?.activeStatusSource ??
+        null;
+      const latestUpdatedAt =
+        (refreshedData?.updatedAt as number | null) ?? (data.updatedAt as number | null) ?? null;
+      const formattedUpdatedAt =
+        latestUpdatedAt !== null
+          ? formatTimestamp(
+              latestUpdatedAt,
+              (refreshedData?.timezone as string) ?? (data.timezone as string) ?? "UTC",
+              (refreshedData?.dateFormat as string) ?? (data.dateFormat as string) ?? "MDY",
+              (refreshedData?.timeFormat as string) ?? (data.timeFormat as string) ?? "24h",
+            )
+          : undefined;
       try {
         await fetch(webhookUrl, {
           method: "POST",
@@ -243,6 +262,9 @@ export async function PATCH(request: Request) {
             merge_variables: {
               show_last_updated: typeof showLastUpdated === "boolean" ? showLastUpdated : data.showLastUpdated ?? true,
               show_status_source: typeof showStatusSource === "boolean" ? showStatusSource : data.showStatusSource ?? false,
+              ...(latestStatusLabel ? { status_text: latestStatusLabel } : {}),
+              ...(latestStatusSource ? { status_source: latestStatusSource } : {}),
+              ...(formattedUpdatedAt ? { updated_at: formattedUpdatedAt } : {}),
             },
             merge_strategy: "replace",
           }),
@@ -288,4 +310,29 @@ export async function DELETE(request: Request) {
     console.error("device delete error", error);
     return NextResponse.json({ error: "Failed to remove device" }, { status: 500 });
   }
+}
+
+function formatTimestamp(timestamp: number, timezone: string, dateFormat: string, timeFormat: string) {
+  const date = new Date(timestamp);
+  const hour12 = timeFormat !== "24h";
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12,
+  }).formatToParts(date);
+  const lookup: Record<string, string> = {};
+  for (const p of parts) {
+    if (p.type !== "literal") lookup[p.type] = p.value;
+  }
+  const yyyy = lookup.year;
+  const mm = lookup.month;
+  const dd = lookup.day;
+  const dateStr =
+    dateFormat === "DMY" ? `${dd}/${mm}/${yyyy}` : dateFormat === "YMD" ? `${yyyy}-${mm}-${dd}` : `${mm}/${dd}/${yyyy}`;
+  const timeStr = `${lookup.hour ?? ""}:${lookup.minute ?? ""}${hour12 && lookup.dayPeriod ? " " + lookup.dayPeriod : ""}`;
+  return `${dateStr} ${timeStr}`.trim();
 }
