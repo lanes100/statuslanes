@@ -84,7 +84,7 @@ export async function ensureCalendarWatchesForDevice(
   if (!webhookUrl) {
     return;
   }
-  let calendar = options?.calendarClient;
+  let calendar: ReturnType<typeof getCalendarClient> | null = options?.calendarClient ?? null;
   if (!calendar) {
     const clientInfo = await buildCalendarClient(userId);
     calendar = clientInfo?.calendar ?? null;
