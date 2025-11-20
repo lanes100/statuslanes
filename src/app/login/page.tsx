@@ -10,6 +10,7 @@ import {
   signInWithPopup,
 } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebaseClient";
+import ThemeToggle from "@/components/theme-toggle";
 
 type Mode = "login" | "signup" | "forgot";
 
@@ -110,7 +111,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-6 text-zinc-50">
+    <div className="relative flex min-h-screen items-center justify-center bg-zinc-950 px-6 text-zinc-50">
+      <div className="absolute right-6 top-6">
+        <ThemeToggle variant="icon" />
+      </div>
       <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-8 shadow-sm">
         <h1 className="text-2xl font-semibold text-zinc-50">
           {mode === "login" ? "Sign in" : "Create account"}

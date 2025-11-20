@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import ThemeToggle from "@/components/theme-toggle";
 
 type Props = { email: string };
 
@@ -74,12 +75,10 @@ export default function UserMenu({ email }: Props) {
             Settings
           </Link>
 
-          <div className="h-8" aria-hidden="true" />
+          <ThemeToggle />
 
           <div className="flex w-full flex-col gap-2 items-center">
-            <div className="w-full px-3 py-2 text-center text-xs font-medium text-zinc-700 dark:text-zinc-200">
-              {email}
-            </div>
+            <div className="w-full px-3 py-2 text-center text-xs font-medium text-zinc-700 dark:text-zinc-200">{email}</div>
             <button
               onClick={logout}
               disabled={signingOut}
