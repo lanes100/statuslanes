@@ -520,73 +520,64 @@ export default function SettingsPanel() {
           </div>
           {googleConnected ? (
             <div className="space-y-3 rounded-md border border-dashed border-zinc-200 p-3 dark:border-zinc-700">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={refreshGoogleCalendars}
                   disabled={loadingCalendars}
-                className="rounded-md bg-zinc-100 px-3 py-2 text-xs font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-700 dark:hover:bg-zinc-700"
-              >
-                {loadingCalendars ? "Refreshing…" : "Refresh calendars"}
-              </button>
+                  className="rounded-md bg-zinc-100 px-3 py-2 text-xs font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-700 dark:hover:bg-zinc-700"
+                >
+                  {loadingCalendars ? "Refreshing…" : "Refresh calendars"}
+                </button>
                 <button
                   type="button"
                   onClick={syncGoogleCalendar}
                   disabled={syncingGoogle}
-                className="rounded-md bg-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-900 shadow-sm transition hover:bg-zinc-300 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
-              >
-                {syncingGoogle ? "Syncing…" : "Sync Google now"}
-              </button>
+                  className="rounded-md bg-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-900 shadow-sm transition hover:bg-zinc-300 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+                >
+                  {syncingGoogle ? "Syncing…" : "Sync Google now"}
+                </button>
                 <div className="text-[11px] text-zinc-600 dark:text-zinc-400">
                   Last synced: {googleLastSynced ? new Date(googleLastSynced).toLocaleString() : "Not yet synced"}
                 </div>
               </div>
-              <a
-                href="/about"
-                target="_blank"
-                rel="noreferrer"
-                className="text-[11px] font-semibold text-zinc-700 underline underline-offset-2 dark:text-zinc-200"
-              >
-                Privacy &amp; Terms
-              </a>
+              {googleCalendars.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">Google calendars to sync</p>
+                  <div className="space-y-1">
+                    {googleCalendars.map((cal) => {
+                      const checked = googleSelection.includes(cal.id);
+                      return (
+                        <label
+                          key={cal.id}
+                          className="flex items-center justify-between rounded-md border border-zinc-200 px-3 py-2 text-xs dark:border-zinc-700"
+                        >
+                          <span className="flex-1 text-zinc-800 dark:text-zinc-100">
+                            {cal.summary} {cal.primary ? "(Primary)" : ""}
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              const next = new Set(googleSelection);
+                              if (e.target.checked) next.add(cal.id);
+                              else next.delete(cal.id);
+                              setGoogleSelection(Array.from(next));
+                            }}
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : !loadingCalendars ? (
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {calendarLoadError ?? "No Google calendars available."}
+                </p>
+              ) : null}
             </div>
           ) : null}
         </div>
-        {googleConnected && googleCalendars.length > 0 ? (
-          <div className="space-y-2">
-            <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">Google calendars to sync</p>
-            <div className="space-y-1">
-              {googleCalendars.map((cal) => {
-                const checked = googleSelection.includes(cal.id);
-                return (
-                  <label
-                    key={cal.id}
-                    className="flex items-center justify-between rounded-md border border-zinc-200 px-3 py-2 text-xs dark:border-zinc-700"
-                  >
-                    <span className="flex-1 text-zinc-800 dark:text-zinc-100">
-                      {cal.summary} {cal.primary ? "(Primary)" : ""}
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={(e) => {
-                        const next = new Set(googleSelection);
-                        if (e.target.checked) {
-                          next.add(cal.id);
-                        } else {
-                          next.delete(cal.id);
-                        }
-                        setGoogleSelection(Array.from(next));
-                      }}
-                    />
-                  </label>
-                );
-              })}
-            </div>
-            </div>
-          ) : googleConnected && calendarLoadError ? (
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">{calendarLoadError}</p>
-        ) : null}
         {outlookConnected ? (
           <div className="space-y-3 rounded-md border border-dashed border-zinc-200 p-3 dark:border-zinc-700">
             <div className="flex items-center gap-3">
