@@ -7,7 +7,6 @@ export type DeviceRecord = {
   userId: string;
   calendarIds?: string[];
   outlookCalendarIds?: string[];
-  calendarProvider?: string | null;
   calendarIcsUrl?: string | null;
   calendarKeywords?: string[];
   calendarKeywordStatusKey?: number | null;

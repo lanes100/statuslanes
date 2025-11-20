@@ -23,7 +23,6 @@ type DeviceSettings = {
   calendarDetectVideoLinks?: boolean;
   calendarVideoStatusKey?: number | null;
   calendarIdleUsePreferred?: boolean;
-  calendarProvider?: "google" | "outlook" | "ics" | null;
 };
 
 const getBrowserTimezone = () => {
@@ -66,7 +65,6 @@ export default function SettingsPanel() {
   const [outlookLoadError, setOutlookLoadError] = useState<string | null>(null);
   const [googleLastSynced, setGoogleLastSynced] = useState<number | null>(null);
   const [outlookLastSynced, setOutlookLastSynced] = useState<number | null>(null);
-  const [calendarProvider, setCalendarProvider] = useState<"google" | "outlook" | "ics">("google");
   const timezones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [];
   const browserTimezone = getBrowserTimezone();
   const browserTimeFormat = detectDeviceTimeFormat();
@@ -125,12 +123,10 @@ export default function SettingsPanel() {
           calendarDetectVideoLinks: res.device.calendarDetectVideoLinks ?? true,
           calendarIdleUsePreferred: res.device.calendarIdleUsePreferred ?? true,
           calendarIds: res.device.calendarIds ?? [],
-          calendarProvider: (res.device as any).calendarProvider ?? "google",
           outlookCalendarIds: (res.device as any).outlookCalendarIds ?? [],
         });
         setGoogleSelection(res.device.calendarIds ?? []);
         setOutlookSelection(((res.device as any).outlookCalendarIds as string[] | undefined) ?? []);
-        setCalendarProvider(((res.device as any).calendarProvider as "google" | "outlook" | "ics" | undefined) ?? "google");
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load settings";
         // hide settings if device not registered yet
@@ -187,7 +183,7 @@ export default function SettingsPanel() {
     }, 600);
     return () => clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [device, googleSelection, outlookSelection, calendarProvider]);
+  }, [device, googleSelection, outlookSelection]);
 
   const saveSettings = async (silent?: boolean) => {
     if (!device) return;
@@ -210,7 +206,6 @@ export default function SettingsPanel() {
           calendarKeywordStatusKey: device.calendarKeywordStatusKey ?? null,
           calendarIds: googleSelection,
           outlookCalendarIds: outlookSelection,
-          calendarProvider,
           calendarDetectVideoLinks: device.calendarDetectVideoLinks ?? false,
           calendarVideoStatusKey: device.calendarVideoStatusKey ?? null,
           calendarIdleUsePreferred: device.calendarIdleUsePreferred ?? false,
@@ -494,25 +489,6 @@ export default function SettingsPanel() {
                 <span>{outlookConnected ? "Disconnect Outlook" : "Connect Outlook Calendar"}</span>
               </span>
             </button>
-            <label className="flex w-full max-w-sm flex-col gap-1 text-xs font-semibold text-zinc-700 dark:text-zinc-200">
-              <span>Use calendar data from</span>
-              <select
-                value={calendarProvider}
-                onChange={(e) => setCalendarProvider(e.target.value as "google" | "outlook" | "ics")}
-                className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-              >
-                <option value="google" disabled={!googleConnected}>
-                  Google Calendar
-                </option>
-                <option value="outlook" disabled={!outlookConnected}>
-                  Outlook Calendar
-                </option>
-                <option value="ics">ICS feed</option>
-              </select>
-              <span className="text-[11px] font-normal text-zinc-500 dark:text-zinc-400">
-                Options disable until that provider is connected.
-              </span>
-            </label>
             <div className="flex flex-col text-xs text-zinc-600 dark:text-zinc-400">
               {googleConnected !== null && <span>Google: {googleConnected ? "Connected" : "Not connected"}</span>}
               {outlookConnected !== null && <span>Outlook: {outlookConnected ? "Connected" : "Not connected"}</span>}
@@ -580,7 +556,7 @@ export default function SettingsPanel() {
         </div>
         {outlookConnected ? (
           <div className="space-y-3 rounded-md border border-dashed border-zinc-200 p-3 dark:border-zinc-700">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={refreshOutlookCalendars}
@@ -597,11 +573,11 @@ export default function SettingsPanel() {
               >
                 {syncingOutlook ? "Syncing…" : "Sync Outlook now"}
               </button>
-              {outlookLoadError && <span className="text-xs text-red-600 dark:text-red-300">{outlookLoadError}</span>}
-              <span className="text-[11px] text-zinc-600 dark:text-zinc-400">
+              <div className="text-[11px] text-zinc-600 dark:text-zinc-400">
                 Last synced: {outlookLastSynced ? new Date(outlookLastSynced).toLocaleString() : "Not yet synced"}
-              </span>
+              </div>
             </div>
+            {outlookLoadError && <span className="text-xs text-red-600 dark:text-red-300">{outlookLoadError}</span>}
             {outlookCalendars.length > 0 ? (
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">Outlook calendars to sync</p>

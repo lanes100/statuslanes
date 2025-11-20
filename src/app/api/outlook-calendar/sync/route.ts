@@ -39,10 +39,6 @@ export async function POST() {
     const device = deviceDoc.data() as DeviceRecord;
     const calendarIds = (device.outlookCalendarIds ?? []).filter((id) => typeof id === "string" && id.length > 0);
 
-    if (device.calendarProvider && device.calendarProvider !== "outlook") {
-      return NextResponse.json({ error: "Outlook provider not selected" }, { status: 400 });
-    }
-
     if (calendarIds.length === 0) {
       return NextResponse.json({ error: "No Outlook calendars selected" }, { status: 400 });
     }
@@ -73,7 +69,7 @@ type OutlookEvent = {
   onlineMeeting?: { joinUrl?: string | null };
 };
 
-async function runOutlookSyncForUser(
+export async function runOutlookSyncForUser(
   device: DeviceRecord,
   deviceRef: FirebaseFirestore.DocumentReference,
   accessToken: string,
@@ -82,10 +78,6 @@ async function runOutlookSyncForUser(
   if (calendarIds.length === 0) {
     return { changed: false, reason: "no_calendars" };
   }
-  if (device.calendarProvider && device.calendarProvider !== "outlook") {
-    return { changed: false, reason: "provider_disabled" };
-  }
-
   const now = Date.now();
   let changed = false;
 

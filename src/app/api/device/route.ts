@@ -3,6 +3,7 @@ import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
 import { decrypt } from "@/lib/crypto";
 import { cookies } from "next/headers";
 import { ensureCalendarWatchesForDevice } from "@/lib/googleCalendarWatch";
+import { ensureOutlookSubscriptionsForDevice } from "@/lib/outlookCalendarWatch";
 
 const SESSION_COOKIE_NAME = "statuslanes_session";
 
@@ -112,7 +113,6 @@ export async function PATCH(request: Request) {
     const calendarKeywordsRaw = body?.calendarKeywords;
     const calendarIdsRaw = body?.calendarIds;
     const outlookCalendarIdsRaw = body?.outlookCalendarIds;
-    const calendarProviderRaw = body?.calendarProvider;
     const calendarDetectVideoLinksRaw = body?.calendarDetectVideoLinks;
     if (typeof timezone === "string") {
       update.timezone = timezone;
@@ -215,13 +215,6 @@ export async function PATCH(request: Request) {
       update.outlookCalendarIds = ids.slice(0, 10);
     }
 
-    if (typeof calendarProviderRaw === "string") {
-      const allowed = new Set(["google", "outlook", "ics"]);
-      if (allowed.has(calendarProviderRaw)) {
-        update.calendarProvider = calendarProviderRaw;
-      }
-    }
-
     if (typeof calendarDetectVideoLinksRaw === "boolean") {
       update.calendarDetectVideoLinks = calendarDetectVideoLinksRaw;
     }
@@ -243,7 +236,6 @@ export async function PATCH(request: Request) {
       !("calendarKeywords" in update) &&
       !("calendarIds" in update) &&
       !("outlookCalendarIds" in update) &&
-      !("calendarProvider" in update) &&
       !("calendarDetectVideoLinks" in update)
     ) {
       return NextResponse.json({ error: "No updates provided" }, { status: 400 });
@@ -262,6 +254,16 @@ export async function PATCH(request: Request) {
         await ensureCalendarWatchesForDevice(user.uid, deviceId, nextIds);
       } catch (err) {
         console.error("Failed to ensure Google Calendar watches", err);
+      }
+    }
+    if (outlookCalendarIdsRaw !== undefined) {
+      const nextOutlookIds = Array.isArray(refreshedData?.outlookCalendarIds)
+        ? (refreshedData?.outlookCalendarIds as string[])
+        : [];
+      try {
+        await ensureOutlookSubscriptionsForDevice(user.uid, deviceId, nextOutlookIds);
+      } catch (err) {
+        console.error("Failed to ensure Outlook subscriptions", err);
       }
     }
 

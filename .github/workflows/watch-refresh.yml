@@ -20,3 +20,6 @@ jobs:
       - name: Refresh Google watch channels
         run: |
           curl -sSf -X POST "$SYNC_BASE_URL/api/google-calendar/watch-refresh" -H "x-sync-secret: $SYNC_SECRET"
+      - name: Refresh Outlook subscriptions
+        run: |
+          curl -sSf -X POST "$SYNC_BASE_URL/api/outlook-calendar/watch-refresh" -H "x-sync-secret: $SYNC_SECRET"
