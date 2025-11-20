@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { decrypt } from "@/lib/crypto";
 import { getOAuthClient, getCalendarClient } from "@/lib/google";
+import { ensureCalendarWatchesForDevice } from "@/lib/googleCalendarWatch";
 
 type SyncState = {
   syncToken?: string | null;
@@ -91,6 +92,12 @@ export async function POST(request: Request) {
         scope: tokenData.scope ?? undefined,
       });
       const calendar = getCalendarClient(oauth2Client);
+
+      try {
+        await ensureCalendarWatchesForDevice(userId, deviceRef.id, calendarIds, { calendarClient: calendar });
+      } catch (err) {
+        console.error("Failed to ensure Google Calendar watches during sync-run", err);
+      }
 
       const syncState: SyncState = { syncToken: tokenData.syncToken ?? undefined, lastSyncedAt: tokenData.lastSyncedAt };
       const cacheableEvents: CachedEvent[] = [];

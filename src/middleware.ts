@@ -6,6 +6,7 @@ const PUBLIC_PATHS = [
   "/reset-password",
   "/about",
   "/terms",
+  "/googlec79c9e04ca59b6e7.html",
   "/manifest.webmanifest",
   "/manifest.json",
   "/favicon.ico",

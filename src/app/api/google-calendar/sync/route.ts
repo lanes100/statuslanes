@@ -52,7 +52,7 @@ export async function POST() {
   }
 }
 
-type DeviceRecord = {
+export type DeviceRecord = {
   deviceId: string;
   userId: string;
   calendarIds?: string[];
@@ -80,7 +80,11 @@ type DeviceRecord = {
   webhookUrlEncrypted?: string;
 };
 
-async function runGoogleSyncForUser(device: DeviceRecord, deviceRef: FirebaseFirestore.DocumentReference, tokenData: any) {
+export async function runGoogleSyncForUser(
+  device: DeviceRecord,
+  deviceRef: FirebaseFirestore.DocumentReference,
+  tokenData: any,
+) {
   const calendarIds = device.calendarIds ?? [];
   if (calendarIds.length === 0) {
     return { changed: false, reason: "no_calendars" };

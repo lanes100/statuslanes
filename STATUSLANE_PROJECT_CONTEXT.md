@@ -46,6 +46,7 @@ Comprehensive context for coding assistant.
 - Sync triggers: GitHub Action `.github/workflows/cron-sync.yml` every 15 min hitting `/api/google-calendar/sync-run` and `/api/ics-sync-run` secured by `x-sync-secret`. Requires repo secrets `SYNC_BASE_URL` (e.g., https://statuslanes.vercel.app) and `SYNC_SECRET`. Vercel cron removed. Heartbeat removed from dashboard; rely on Action + manual sync.
 - TRMNL pushes: Google/ICS bulk and self sync push status to TRMNL when status changes.
 - Env vars: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `SYNC_SECRET`, Firebase creds, `WEBHOOK_SECRET_KEY`, `NEXT_PUBLIC_APP_URL`, etc. Google secrets only in Vercel/.env.local (not in GitHub).
+- Google push watches: `GOOGLE_CALENDAR_WEBHOOK_URL` points to `/api/google-calendar/webhook`. We store watch metadata per calendar in `google_calendar_channels` (channelId/resourceId/deviceId/userId/expiration/token). Device PATCH ensures watches whenever `calendarIds` change, cron `google-calendar/sync-run` keeps them renewed, disconnect removes all channels, and the webhook triggers `runGoogleSyncForUser` immediately on notifications.
 
 ## Notes
 - GitHub secrets: `SYNC_BASE_URL`, `SYNC_SECRET` only. Google creds live in Vercel/env.local.

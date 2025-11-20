@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
 import { decrypt } from "@/lib/crypto";
 import { cookies } from "next/headers";
+import { ensureCalendarWatchesForDevice } from "@/lib/googleCalendarWatch";
 
 const SESSION_COOKIE_NAME = "statuslanes_session";
 
@@ -230,6 +231,15 @@ export async function PATCH(request: Request) {
     await ref.update(update);
     const refreshed = await ref.get();
     const refreshedData = refreshed.data();
+
+    if (calendarIdsRaw !== undefined) {
+      const nextIds = Array.isArray(refreshedData?.calendarIds) ? (refreshedData?.calendarIds as string[]) : [];
+      try {
+        await ensureCalendarWatchesForDevice(user.uid, deviceId, nextIds);
+      } catch (err) {
+        console.error("Failed to ensure Google Calendar watches", err);
+      }
+    }
 
     // Push labels to TRMNL so webhook can render them
     const webhookUrlEncrypted = data.webhookUrlEncrypted as string | undefined;
