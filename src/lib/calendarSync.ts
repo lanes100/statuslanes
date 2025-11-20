@@ -89,7 +89,10 @@ export async function applyCachedEvents(
 ) {
   const cached = (device.calendarCachedEvents ?? []).filter((e) => e.end > now);
   if (cached.length === 0) {
-    if ((device.calendarCachedEvents?.length ?? 0) > 0) await deviceRef.update({ calendarCachedEvents: [] });
+    if ((device.calendarCachedEvents?.length ?? 0) > 0) {
+      await deviceRef.update({ calendarCachedEvents: [] });
+      device.calendarCachedEvents = [];
+    }
     return false;
   }
   cached.sort((a, b) => a.start - b.start);
@@ -102,12 +105,18 @@ export async function applyCachedEvents(
   }
   if (!chosen) {
     await deviceRef.update({ calendarCachedEvents: cached });
+    device.calendarCachedEvents = cached;
     return false;
   }
   const label =
     device.statuses?.find((s) => s.key === chosen.statusKey)?.label ??
     (chosen.statusKey === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
   if (device.activeStatusKey !== chosen.statusKey || device.activeStatusLabel !== label) {
+    device.activeStatusKey = chosen.statusKey;
+    device.activeStatusLabel = label ?? null;
+    device.activeStatusSource = sourceLabel;
+    device.activeEventEndsAt = chosen.end;
+    device.calendarCachedEvents = cached;
     await deviceRef.update({
       activeStatusKey: chosen.statusKey,
       activeStatusLabel: label ?? null,
@@ -116,14 +125,20 @@ export async function applyCachedEvents(
       calendarCachedEvents: cached,
       updatedAt: now,
     });
-    await pushStatusToTrmnl(device, chosen.statusKey, label ?? "");
+    await pushStatusToTrmnl(device, chosen.statusKey, label ?? "", sourceLabel);
     return true;
   }
   await deviceRef.update({ calendarCachedEvents: cached });
+  device.calendarCachedEvents = cached;
   return false;
 }
 
-export async function pushStatusToTrmnl(device: DeviceRecord, statusKey: number | null, statusLabel: string) {
+export async function pushStatusToTrmnl(
+  device: DeviceRecord,
+  statusKey: number | null,
+  statusLabel: string,
+  sourceOverride?: string,
+) {
   if (!statusKey || !device.webhookUrlEncrypted) return;
   const webhookUrl = decrypt(device.webhookUrlEncrypted);
   if (!webhookUrl) return;
@@ -141,7 +156,7 @@ export async function pushStatusToTrmnl(device: DeviceRecord, statusKey: number 
           status_text: status,
           show_last_updated: device.showLastUpdated ?? true,
           show_status_source: device.showStatusSource ?? false,
-          status_source: device.activeStatusSource ?? "Calendar",
+          status_source: sourceOverride ?? device.activeStatusSource ?? "Calendar",
           updated_at: formattedUpdatedAt,
         },
         merge_strategy: "replace",

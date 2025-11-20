@@ -247,10 +247,15 @@ export async function runGoogleSyncForUser(
     }
   }
 
-  await deviceRef.update({ calendarCachedEvents: buildSameDayCache(cacheableEvents, now) });
+    await deviceRef.update({ calendarCachedEvents: buildSameDayCache(cacheableEvents, now) });
 
-  return { changed };
-}
+    await adminDb
+      .collection("google_tokens")
+      .doc(device.userId)
+      .set({ lastSyncedAt: now, manualSyncRequestedAt: null, updatedAt: Date.now() }, { merge: true });
+
+    return { changed };
+  }
 
 async function pushStatusToTrmnl(device: DeviceRecord, statusKey: number | null, statusLabel: string) {
   const webhookUrlEncrypted = device.webhookUrlEncrypted;
