@@ -58,6 +58,8 @@ Comprehensive context for coding assistant.
 - Calendar mapping defaults for new devices: video-link detection ON mapped to status key 2 (“in a meeting”), all-day -> key 5 (“out of office”), busy events -> do nothing, idle -> previous manual selection.
 - Settings UI exposes “Previous manual selection” for idle, video mapping select, clearer labels; Google action buttons layout adjusted and light-gray styling.
 - Calendar sync logic stores event end times and extends through back-to-back events with the same mapping (Google bulk/manual/self and ICS bulk/self) to avoid dropping status between consecutive meetings.
+- `/about` (privacy policy) and `/terms` are public, linked in the menu and login/settings. Signup requires ticking Privacy + Terms checkboxes (works for Google signup too). About page has a back button; Terms page added.
+- Status pushes: `/api/device` autosaves now resend the current status text/source/timestamp to keep TRMNL populated; sync endpoints store `activeStatusSource` (“Google Calendar”/“ICS”/“StatusLanes”) and only push on changes. Manual cron runs use cached events. Calendar window now only considers events starting within 5 minutes.
 
 ## Next action item
 - Create/use a dedicated production Google OAuth Web client without loopback/localhost redirects to clear the “Use secure flows” warning. Add only prod origins/redirects, move localhost to a separate dev client, and point prod `GOOGLE_CLIENT_ID/SECRET` at the clean client.
