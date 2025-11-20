@@ -49,6 +49,8 @@ export default function SettingsPanel() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [googleConnected, setGoogleConnected] = useState<boolean | null>(null);
+  const [outlookConnected, setOutlookConnected] = useState<boolean | null>(null);
+  const [outlookActionLoading, setOutlookActionLoading] = useState(false);
   const [syncingGoogle, setSyncingGoogle] = useState(false);
   const [googleCalendars, setGoogleCalendars] = useState<{ id: string; summary: string; primary?: boolean }[]>([]);
   const [calendarSelection, setCalendarSelection] = useState<string[]>([]);
@@ -145,6 +147,15 @@ export default function SettingsPanel() {
       }
     };
     fetchGoogleStatus();
+    const fetchOutlookStatus = async () => {
+      try {
+        const res = await apiFetch<{ connected: boolean }>("/api/outlook-calendar/status", { retry: false });
+        setOutlookConnected(res.connected);
+      } catch {
+        setOutlookConnected(false);
+      }
+    };
+    fetchOutlookStatus();
   }, [addToast]);
 
   // Auto-save settings on change (with debounce)
@@ -202,6 +213,21 @@ export default function SettingsPanel() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to start Google auth";
       addToast({ message, type: "error" });
+    }
+  };
+
+  const startOutlookConnect = async () => {
+    try {
+      setOutlookActionLoading(true);
+      const res = await apiFetch<{ url: string }>("/api/outlook-calendar/auth");
+      if (res.url) {
+        window.location.href = res.url;
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to start Outlook auth";
+      addToast({ message, type: "error" });
+    } finally {
+      setOutlookActionLoading(false);
     }
   };
 
@@ -349,7 +375,7 @@ export default function SettingsPanel() {
           </p>
         </div>
         <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={googleConnected ? undefined : startGoogleConnect}
@@ -376,13 +402,47 @@ export default function SettingsPanel() {
                   : undefined
               }
             >
-              {googleConnected ? "Disconnect Google" : "Connect Google Calendar"}
-            </button>
-            {googleConnected !== null && (
-              <span className="text-xs text-zinc-600 dark:text-zinc-400">
-                {googleConnected ? "Connected" : "Not connected"}
+              <span className="flex items-center gap-2">
+                <img src="/Google__G__logo.svg" alt="Google" className="h-4 w-4" />
+                <span>{googleConnected ? "Disconnect Google" : "Connect Google Calendar"}</span>
               </span>
-            )}
+            </button>
+            <button
+              type="button"
+              disabled={outlookConnected === null || outlookActionLoading}
+              onClick={outlookConnected ? undefined : startOutlookConnect}
+              className={`rounded-md px-3 py-2 text-xs font-semibold shadow-sm ring-1 transition ${
+                outlookConnected
+                  ? "bg-red-50 text-red-700 ring-red-200 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-100 dark:ring-red-800"
+                  : "bg-white text-zinc-800 ring-zinc-200 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-700 dark:hover:bg-zinc-700"
+              } ${(outlookConnected === null || outlookActionLoading) && !outlookConnected ? "cursor-not-allowed opacity-60" : ""}`}
+              onClickCapture={
+                outlookConnected
+                  ? async () => {
+                      try {
+                        setOutlookActionLoading(true);
+                        await apiFetch("/api/outlook-calendar/disconnect", { method: "POST" });
+                        setOutlookConnected(false);
+                        addToast({ message: "Outlook disconnected", type: "success" });
+                      } catch (err) {
+                        const message = err instanceof Error ? err.message : "Failed to disconnect Outlook";
+                        addToast({ message, type: "error" });
+                      } finally {
+                        setOutlookActionLoading(false);
+                      }
+                    }
+                  : undefined
+              }
+            >
+              <span className="flex items-center gap-2">
+                <img src="/Microsoft_logo.svg" alt="Microsoft" className="h-4 w-4" />
+                <span>{outlookConnected ? "Disconnect Outlook" : "Connect Outlook Calendar"}</span>
+              </span>
+            </button>
+            <div className="flex flex-col text-xs text-zinc-600 dark:text-zinc-400">
+              {googleConnected !== null && <span>Google: {googleConnected ? "Connected" : "Not connected"}</span>}
+              {outlookConnected !== null && <span>Outlook: {outlookConnected ? "Connected" : "Not connected"}</span>}
+            </div>
           </div>
           {googleConnected ? (
             <div className="flex flex-col items-start gap-3">
