@@ -20,6 +20,8 @@ type DeviceRecord = {
   deviceId: string;
   userId: string;
   calendarIds?: string[];
+  outlookCalendarIds?: string[];
+  calendarProvider?: string | null;
   calendarKeywords?: string[];
   calendarKeywordStatusKey?: number | null;
   calendarMeetingStatusKey?: number | null;

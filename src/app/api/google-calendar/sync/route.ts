@@ -56,6 +56,8 @@ export type DeviceRecord = {
   deviceId: string;
   userId: string;
   calendarIds?: string[];
+  outlookCalendarIds?: string[];
+  calendarProvider?: string | null;
   calendarKeywords?: string[];
   calendarKeywordStatusKey?: number | null;
   calendarMeetingStatusKey?: number | null;
@@ -88,6 +90,9 @@ export async function runGoogleSyncForUser(
   const calendarIds = device.calendarIds ?? [];
   if (calendarIds.length === 0) {
     return { changed: false, reason: "no_calendars" };
+  }
+  if (device.calendarProvider && device.calendarProvider !== "google") {
+    return { changed: false, reason: "provider_disabled" };
   }
 
   const oauth2Client = getOAuthClient();

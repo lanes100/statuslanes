@@ -111,6 +111,8 @@ export async function PATCH(request: Request) {
     const calendarIdleUsePreferredRaw = body?.calendarIdleUsePreferred;
     const calendarKeywordsRaw = body?.calendarKeywords;
     const calendarIdsRaw = body?.calendarIds;
+    const outlookCalendarIdsRaw = body?.outlookCalendarIds;
+    const calendarProviderRaw = body?.calendarProvider;
     const calendarDetectVideoLinksRaw = body?.calendarDetectVideoLinks;
     if (typeof timezone === "string") {
       update.timezone = timezone;
@@ -199,6 +201,26 @@ export async function PATCH(request: Request) {
           : [];
       update.calendarIds = ids.slice(0, 10);
     }
+    if (outlookCalendarIdsRaw !== undefined) {
+      const ids: string[] = Array.isArray(outlookCalendarIdsRaw)
+        ? (outlookCalendarIdsRaw as unknown[])
+            .map((v) => (typeof v === "string" ? v.trim() : ""))
+            .filter((v) => v.length > 0)
+        : typeof outlookCalendarIdsRaw === "string"
+          ? outlookCalendarIdsRaw
+              .split(",")
+              .map((s) => s.trim())
+              .filter((s) => s.length > 0)
+          : [];
+      update.outlookCalendarIds = ids.slice(0, 10);
+    }
+
+    if (typeof calendarProviderRaw === "string") {
+      const allowed = new Set(["google", "outlook", "ics"]);
+      if (allowed.has(calendarProviderRaw)) {
+        update.calendarProvider = calendarProviderRaw;
+      }
+    }
 
     if (typeof calendarDetectVideoLinksRaw === "boolean") {
       update.calendarDetectVideoLinks = calendarDetectVideoLinksRaw;
@@ -220,6 +242,8 @@ export async function PATCH(request: Request) {
       !("calendarIdleUsePreferred" in update) &&
       !("calendarKeywords" in update) &&
       !("calendarIds" in update) &&
+      !("outlookCalendarIds" in update) &&
+      !("calendarProvider" in update) &&
       !("calendarDetectVideoLinks" in update)
     ) {
       return NextResponse.json({ error: "No updates provided" }, { status: 400 });

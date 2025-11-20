@@ -21,7 +21,7 @@ export async function GET() {
     const user = await requireUser();
     const record = await getOutlookTokenRecord(user.uid);
     if (!record) {
-      return NextResponse.json({ connected: false });
+      return NextResponse.json({ connected: false, lastSyncedAt: null });
     }
     return NextResponse.json({
       connected: Boolean(record.accessToken),
