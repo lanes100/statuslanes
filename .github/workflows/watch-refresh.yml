@@ -1,12 +1,12 @@
-name: Calendar Sync
+name: Calendar Watch Refresh
 
 on:
   schedule:
-    - cron: "* * * * *" # every minute
+    - cron: "0 * * * *"
   workflow_dispatch: {}
 
 jobs:
-  sync:
+  refresh:
     runs-on: ubuntu-latest
     env:
       SYNC_BASE_URL: ${{ secrets.SYNC_BASE_URL }}
@@ -17,6 +17,6 @@ jobs:
           if [ -z "$SYNC_BASE_URL" ] || [ -z "$SYNC_SECRET" ]; then
             echo "Missing SYNC_BASE_URL or SYNC_SECRET"; exit 1;
           fi
-      - name: Call ics sync
+      - name: Refresh Google watch channels
         run: |
-          curl -sSf -X POST "$SYNC_BASE_URL/api/ics-sync-run" -H "x-sync-secret: $SYNC_SECRET"
+          curl -sSf -X POST "$SYNC_BASE_URL/api/google-calendar/watch-refresh" -H "x-sync-secret: $SYNC_SECRET"
