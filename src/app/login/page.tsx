@@ -111,21 +111,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-zinc-950 px-6 text-zinc-50">
+    <div className="relative flex min-h-screen items-center justify-center bg-zinc-50 px-6 py-10 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
       <div className="absolute right-6 top-6">
         <ThemeToggle variant="icon" />
       </div>
-      <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold text-zinc-50">
-          {mode === "login" ? "Sign in" : "Create account"}
-        </h1>
-        <p className="mt-1 text-sm text-zinc-300">
-          Use the email and password you want for Statuslanes.
-        </p>
+      <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 text-zinc-900 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
+        <h1 className="text-2xl font-semibold">{mode === "login" ? "Sign in" : "Create account"}</h1>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">Use the email and password you want for Statuslanes.</p>
 
         <form className="mt-6 space-y-4" onSubmit={submit}>
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-zinc-100" htmlFor="email">
+            <label className="block text-sm font-medium text-zinc-800 dark:text-zinc-100" htmlFor="email">
               Email
             </label>
             <input
@@ -135,13 +131,13 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-50 shadow-sm focus:border-white focus:outline-none focus:ring-2 focus:ring-white/10"
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-white dark:focus:ring-white/10"
             />
           </div>
 
           {mode !== "forgot" && (
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-zinc-100" htmlFor="password">
+              <label className="block text-sm font-medium text-zinc-800 dark:text-zinc-100" htmlFor="password">
                 Password
               </label>
               <input
@@ -151,7 +147,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-50 shadow-sm focus:border-white focus:outline-none focus:ring-2 focus:ring-white/10"
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-white dark:focus:ring-white/10"
               />
             </div>
           )}
@@ -159,7 +155,7 @@ export default function LoginPage() {
           {mode !== "forgot" && (
             <button
               type="button"
-              className="text-xs text-zinc-200 underline underline-offset-4"
+              className="text-xs text-zinc-600 underline underline-offset-4 dark:text-zinc-200"
               onClick={() => setMode("forgot")}
             >
               Forgot password?
@@ -169,17 +165,17 @@ export default function LoginPage() {
           {error && <p className="text-sm text-red-400">{error}</p>}
 
           {mode === "signup" && (
-            <div className="space-y-2 text-xs text-zinc-200">
+            <div className="space-y-2 text-xs text-zinc-600 dark:text-zinc-200">
               <label className="flex items-start gap-2">
                 <input
                   type="checkbox"
                   checked={acceptedPolicy}
                   onChange={(e) => setAcceptedPolicy(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-zinc-100 focus:ring-2 focus:ring-white/30"
+                  className="mt-1 h-4 w-4 rounded border-zinc-300 bg-white text-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:ring-white/30"
                 />
                 <span>
                   I agree to the{" "}
-                  <a href="/about" target="_blank" rel="noreferrer" className="font-semibold text-zinc-100 underline">
+                  <a href="/about" target="_blank" rel="noreferrer" className="font-semibold text-zinc-900 underline dark:text-zinc-100">
                     Privacy Policy
                   </a>
                   .
@@ -190,11 +186,11 @@ export default function LoginPage() {
                   type="checkbox"
                   checked={acceptedTerms}
                   onChange={(e) => setAcceptedTerms(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-zinc-100 focus:ring-2 focus:ring-white/30"
+                  className="mt-1 h-4 w-4 rounded border-zinc-300 bg-white text-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:ring-white/30"
                 />
                 <span>
                   I agree to the{" "}
-                  <a href="/terms" target="_blank" rel="noreferrer" className="font-semibold text-zinc-100 underline">
+                  <a href="/terms" target="_blank" rel="noreferrer" className="font-semibold text-zinc-900 underline dark:text-zinc-100">
                     Terms &amp; Conditions
                   </a>
                   .
@@ -206,7 +202,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center rounded-lg bg-zinc-100 px-4 py-2 text-zinc-800 shadow-sm transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+            className="flex w-full items-center justify-center rounded-lg bg-zinc-900 px-4 py-2 text-zinc-50 shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
           >
             {loading
               ? "Please wait..."
@@ -220,15 +216,15 @@ export default function LoginPage() {
 
         <div className="mt-4">
           <div className="relative my-3 flex items-center">
-            <div className="h-px flex-1 bg-zinc-800" />
-            <span className="px-3 text-xs uppercase tracking-[0.2em] text-zinc-500">or</span>
-            <div className="h-px flex-1 bg-zinc-800" />
+            <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+            <span className="px-3 text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">or</span>
+            <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
           </div>
           <button
             type="button"
             onClick={signInWithGoogle}
             disabled={socialLoading || (mode === "signup" && (!acceptedPolicy || !acceptedTerms))}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-900 dark:text-zinc-100 dark:ring-zinc-700 dark:hover:bg-zinc-800"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" aria-hidden="true" className="h-5 w-5">
               <path
@@ -253,24 +249,24 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <div className="mt-4 text-sm text-zinc-300">
+        <div className="mt-4 text-sm text-zinc-600 dark:text-zinc-300">
           {mode === "login" && (
-            <button className="text-zinc-100 underline underline-offset-4" onClick={() => setMode("signup")}>
+            <button className="text-zinc-900 underline underline-offset-4 dark:text-zinc-100" onClick={() => setMode("signup")}>
               New here? Create an account
             </button>
           )}
           {mode === "signup" && (
-            <button className="text-zinc-100 underline underline-offset-4" onClick={() => setMode("login")}>
+            <button className="text-zinc-900 underline underline-offset-4 dark:text-zinc-100" onClick={() => setMode("login")}>
               Already have an account? Sign in
             </button>
           )}
           {mode === "forgot" && (
-            <button className="text-zinc-100 underline underline-offset-4" onClick={() => setMode("login")}>
+            <button className="text-zinc-900 underline underline-offset-4 dark:text-zinc-100" onClick={() => setMode("login")}>
               Back to sign in
             </button>
           )}
-          <div className="mt-3 text-xs text-zinc-400">
-            <a href="/about" className="underline hover:text-zinc-200">
+          <div className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+            <a href="/about" className="underline hover:text-zinc-700 dark:hover:text-zinc-200">
               Privacy Policy
             </a>
           </div>
