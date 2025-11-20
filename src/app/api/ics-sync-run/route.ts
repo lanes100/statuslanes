@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import ICAL from "ical.js";
 import { decrypt } from "@/lib/crypto";
+import { scheduleCalendarCacheApply } from "@/lib/calendarHeartbeat";
 
 type DeviceRecord = {
   deviceId: string;
@@ -211,6 +212,7 @@ export async function POST(request: Request) {
           }
           await doc.ref.update(updatePayload);
           await pushStatusToTrmnl(device, chosenKey, chosenLabel ?? "");
+          await scheduleCalendarCacheApply(device.deviceId, chosenEndsAt ?? null);
         } else {
           await doc.ref.update({ lastIcsSyncedAt: Date.now() });
         }

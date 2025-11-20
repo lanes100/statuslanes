@@ -1,4 +1,5 @@
 import { decrypt } from "@/lib/crypto";
+import { scheduleCalendarCacheApply } from "@/lib/calendarHeartbeat";
 
 export type CachedEvent = { start: number; end: number; statusKey: number | null };
 
@@ -161,6 +162,7 @@ export async function applyCachedEvents(
       updatedAt: now,
     });
     await pushStatusToTrmnl(device, chosen.statusKey, label ?? "", sourceLabel);
+    await scheduleCalendarCacheApply(device.deviceId, chosen.end);
     return true;
   }
   await deviceRef.update({ calendarCachedEvents: cached });

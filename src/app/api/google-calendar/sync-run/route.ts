@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { decrypt } from "@/lib/crypto";
+import { scheduleCalendarCacheApply } from "@/lib/calendarHeartbeat";
 import { getOAuthClient, getCalendarClient } from "@/lib/google";
 import { ensureCalendarWatchesForDevice } from "@/lib/googleCalendarWatch";
 
@@ -274,9 +275,10 @@ export async function POST(request: Request) {
               updatePayload.preferredStatusLabel = device.activeStatusLabel ?? null;
               }
               await deviceRef.update(updatePayload);
-              await pushStatusToTrmnl(device, chosenKey, chosenLabel ?? "");
-            }
-          }
+        await pushStatusToTrmnl(device, chosenKey, chosenLabel ?? "");
+        await scheduleCalendarCacheApply(device.deviceId, chosenEndsAt ?? null);
+      }
+    }
         } catch (err) {
           console.error("calendar sync error", calId, err);
           if (err && typeof err === "object" && "code" in err && (err as any).code === 410) {
@@ -292,7 +294,7 @@ export async function POST(request: Request) {
         .update({ syncToken: syncState.syncToken ?? null, lastSyncedAt: now, manualSyncRequestedAt: null });
 
       // After processing all calendars, update cache for today
-      await deviceRef.update({ calendarCachedEvents: buildSameDayCache(cacheableEvents, now) });
+    await deviceRef.update({ calendarCachedEvents: buildSameDayCache(cacheableEvents, now) });
     }
 
     return NextResponse.json({ ok: true }, { status: 200 });

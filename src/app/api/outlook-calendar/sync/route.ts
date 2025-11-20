@@ -13,6 +13,7 @@ import {
   type DeviceRecord,
   type NormalizedCalendarEvent,
 } from "@/lib/calendarSync";
+import { scheduleCalendarCacheApply } from "@/lib/calendarHeartbeat";
 
 const SESSION_COOKIE_NAME = "statuslanes_session";
 
@@ -137,6 +138,7 @@ export async function runOutlookSyncForUser(
         updatedAt: now,
       });
       await pushStatusToTrmnl(device, chosenKey, chosenLabel ?? "");
+      await scheduleCalendarCacheApply(device.deviceId, chosenEndsAt ?? null);
     }
   }
 

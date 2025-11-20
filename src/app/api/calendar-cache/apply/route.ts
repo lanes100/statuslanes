@@ -22,12 +22,30 @@ export async function POST(request: Request) {
   }
 
   try {
-    const snapshot = await adminDb.collection("devices").get();
+    let deviceId: string | undefined;
+    try {
+      const payload = await request.json();
+      if (payload && typeof payload.deviceId === "string") {
+        deviceId = payload.deviceId;
+      }
+    } catch {
+      // ignore body parse errors (likely empty body)
+    }
+
+    let docs: FirebaseFirestore.DocumentSnapshot[];
+    if (deviceId) {
+      const single = await adminDb.collection("devices").doc(deviceId).get();
+      docs = single.exists ? [single] : [];
+    } else {
+      const snapshot = await adminDb.collection("devices").get();
+      docs = snapshot.docs;
+    }
+
     const now = Date.now();
     let processed = 0;
     let changed = 0;
 
-    for (const doc of snapshot.docs) {
+    for (const doc of docs) {
       const device = doc.data() as DeviceRecord;
       const hasCache = Array.isArray(device.calendarCachedEvents) && device.calendarCachedEvents.length > 0;
       const ended =
@@ -53,4 +71,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to advance calendar cache" }, { status: 500 });
   }
 }
-

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
 import { getOAuthClient, getCalendarClient } from "@/lib/google";
 import { decrypt } from "@/lib/crypto";
+import { scheduleCalendarCacheApply } from "@/lib/calendarHeartbeat";
 
 const SESSION_COOKIE_NAME = "statuslanes_session";
 
@@ -243,6 +244,7 @@ export async function runGoogleSyncForUser(
         }
         await deviceRef.update(updatePayload);
         await pushStatusToTrmnl(device, chosenKey, chosenLabel ?? "");
+        await scheduleCalendarCacheApply(device.deviceId, chosenEndsAt ?? null);
       }
     }
   }
