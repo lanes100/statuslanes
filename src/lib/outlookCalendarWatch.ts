@@ -139,7 +139,6 @@ async function createSubscription(
         resource: `/me/calendars('${calendarId.replace(/'/g, "''")}')/events`,
         expirationDateTime: expirationDate,
         clientState,
-        latestSupportedTlsVersion: "1.2",
       }),
     });
     if (!res.ok) {

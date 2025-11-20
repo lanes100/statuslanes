@@ -27,7 +27,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const raw = await request.text();
+    const body = raw ? JSON.parse(raw) : {};
     const notifications: Notification[] = Array.isArray(body?.value) ? body.value : [];
     if (notifications.length === 0) {
       return NextResponse.json({ ok: true });
