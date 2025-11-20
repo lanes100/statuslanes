@@ -53,10 +53,13 @@ export default function SettingsPanel() {
   const [outlookActionLoading, setOutlookActionLoading] = useState(false);
   const [syncingGoogle, setSyncingGoogle] = useState(false);
   const [googleCalendars, setGoogleCalendars] = useState<{ id: string; summary: string; primary?: boolean }[]>([]);
+  const [outlookCalendars, setOutlookCalendars] = useState<{ id: string; name: string }[]>([]);
   const [calendarSelection, setCalendarSelection] = useState<string[]>([]);
   const { toasts, addToast, removeToast } = useToast();
   const [loadingCalendars, setLoadingCalendars] = useState(false);
   const [calendarLoadError, setCalendarLoadError] = useState<string | null>(null);
+  const [loadingOutlookCalendars, setLoadingOutlookCalendars] = useState(false);
+  const [outlookLoadError, setOutlookLoadError] = useState<string | null>(null);
   const [googleLastSynced, setGoogleLastSynced] = useState<number | null>(null);
   const timezones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [];
   const browserTimezone = getBrowserTimezone();
@@ -151,8 +154,12 @@ export default function SettingsPanel() {
       try {
         const res = await apiFetch<{ connected: boolean }>("/api/outlook-calendar/status", { retry: false });
         setOutlookConnected(res.connected);
+        if (res.connected) {
+          await refreshOutlookCalendars();
+        }
       } catch {
         setOutlookConnected(false);
+        setOutlookLoadError("Not connected to Outlook");
       }
     };
     fetchOutlookStatus();
@@ -266,6 +273,21 @@ export default function SettingsPanel() {
       addToast({ message, type: "error" });
     } finally {
       setLoadingCalendars(false);
+    }
+  };
+
+  const refreshOutlookCalendars = async () => {
+    setLoadingOutlookCalendars(true);
+    setOutlookLoadError(null);
+    try {
+      const res = await apiFetch<{ calendars: { id: string; name: string }[] }>("/api/outlook-calendar/calendars");
+      setOutlookCalendars(res.calendars);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load Outlook calendars";
+      setOutlookLoadError(message);
+      addToast({ message, type: "error" });
+    } finally {
+      setLoadingOutlookCalendars(false);
     }
   };
 
@@ -510,6 +532,49 @@ export default function SettingsPanel() {
           </div>
         ) : googleConnected && calendarLoadError ? (
           <p className="text-xs text-zinc-500 dark:text-zinc-400">{calendarLoadError}</p>
+        ) : null}
+        {outlookConnected ? (
+          <div className="space-y-3 rounded-md border border-dashed border-zinc-200 p-3 dark:border-zinc-700">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={refreshOutlookCalendars}
+                disabled={loadingOutlookCalendars}
+                className="rounded-md bg-zinc-100 px-3 py-2 text-xs font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-zinc-700 dark:hover:bg-zinc-700"
+              >
+                {loadingOutlookCalendars ? "Refreshing…" : "Refresh Outlook calendars"}
+              </button>
+              {outlookLoadError && <span className="text-xs text-red-600 dark:text-red-300">{outlookLoadError}</span>}
+            </div>
+            {outlookCalendars.length > 0 ? (
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">Outlook calendars to sync</p>
+                {outlookCalendars.map((cal) => {
+                  const checked = calendarSelection.includes(cal.id);
+                  return (
+                    <label
+                      key={cal.id}
+                      className="flex items-center justify-between rounded-md border border-zinc-200 px-3 py-2 text-xs dark:border-zinc-700"
+                    >
+                      <span className="flex-1 text-zinc-800 dark:text-zinc-100">{cal.name}</span>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          const next = new Set(calendarSelection);
+                          if (e.target.checked) next.add(cal.id);
+                          else next.delete(cal.id);
+                          setCalendarSelection(Array.from(next));
+                        }}
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            ) : !loadingOutlookCalendars ? (
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">No Outlook calendars available.</p>
+            ) : null}
+          </div>
         ) : null}
         <div className="space-y-2">
           <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">ICS URL</label>
