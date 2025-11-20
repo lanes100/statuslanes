@@ -323,32 +323,70 @@ function buildSameDayCache(events: { start: number; end: number; statusKey: numb
 async function applyCachedEvents(device: DeviceRecord, deviceRef: FirebaseFirestore.DocumentReference, now: number) {
   const cached = (device.calendarCachedEvents ?? []).filter((e) => e.end > now);
   if (cached.length === 0) {
-    if ((device.calendarCachedEvents?.length ?? 0) > 0) await deviceRef.update({ calendarCachedEvents: [] });
+    if ((device.calendarCachedEvents?.length ?? 0) > 0) {
+      await deviceRef.update({ calendarCachedEvents: [] });
+      device.calendarCachedEvents = [];
+    }
     return;
   }
   cached.sort((a, b) => a.start - b.start);
+  let chosen: CachedEvent | null = null;
   for (const ev of cached) {
     if (now >= ev.start && now <= ev.end) {
-      const label =
-        device.statuses?.find((s) => s.key === ev.statusKey)?.label ??
-        (ev.statusKey === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
-      if (device.activeStatusKey !== ev.statusKey || device.activeStatusLabel !== label) {
+      chosen = ev;
+      break;
+    }
+  }
+  if (!chosen) {
+    await deviceRef.update({ calendarCachedEvents: cached });
+    device.calendarCachedEvents = cached;
+    const fallbackKey =
+      (device.calendarIdleUsePreferred && device.preferredStatusKey) ||
+      (!device.calendarIdleUsePreferred && device.calendarIdleStatusKey)
+        ? device.calendarIdleUsePreferred
+          ? device.preferredStatusKey
+          : device.calendarIdleStatusKey
+        : device.preferredStatusKey || device.calendarIdleStatusKey || null;
+    if (fallbackKey) {
+      const fallbackLabel =
+        device.statuses?.find((s) => s.key === fallbackKey)?.label ??
+        (fallbackKey === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
+      const needsUpdate =
+        device.activeStatusKey !== fallbackKey || device.activeStatusLabel !== fallbackLabel || device.activeEventEndsAt !== null;
+      if (needsUpdate) {
         await deviceRef.update({
-          activeStatusKey: ev.statusKey,
-          activeStatusLabel: label ?? null,
+          activeStatusKey: fallbackKey,
+          activeStatusLabel: fallbackLabel ?? null,
           activeStatusSource: "Google Calendar",
-          activeEventEndsAt: ev.end,
+          activeEventEndsAt: null,
           calendarCachedEvents: cached,
           updatedAt: now,
         });
-        await pushStatusToTrmnl(device, ev.statusKey, label ?? "");
-      } else {
-        await deviceRef.update({ calendarCachedEvents: cached });
+        await pushStatusToTrmnl(device, fallbackKey, fallbackLabel ?? "");
       }
-      return;
+    } else if (device.activeEventEndsAt && device.activeEventEndsAt <= now) {
+      await deviceRef.update({ activeEventEndsAt: null, calendarCachedEvents: cached });
     }
+    return;
   }
-  await deviceRef.update({ calendarCachedEvents: cached });
+
+  const label =
+    device.statuses?.find((s) => s.key === chosen.statusKey)?.label ??
+    (chosen.statusKey === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
+  if (device.activeStatusKey !== chosen.statusKey || device.activeStatusLabel !== label) {
+    await deviceRef.update({
+      activeStatusKey: chosen.statusKey,
+      activeStatusLabel: label ?? null,
+      activeStatusSource: "Google Calendar",
+      activeEventEndsAt: chosen.end,
+      calendarCachedEvents: cached,
+      updatedAt: now,
+    });
+    await pushStatusToTrmnl(device, chosen.statusKey, label ?? "");
+  } else {
+    await deviceRef.update({ calendarCachedEvents: cached });
+  }
+  device.calendarCachedEvents = cached;
 }
 
 function mapEventsForCache(events: any[], device: DeviceRecord): CachedEvent[] {
