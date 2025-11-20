@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
 import { getOAuthClient, getCalendarClient } from "@/lib/google";
 import { decrypt } from "@/lib/crypto";
+import { scheduleCalendarCacheApply } from "@/lib/calendarHeartbeat";
 
 const SESSION_COOKIE_NAME = "statuslanes_session";
 
@@ -229,11 +230,14 @@ export async function POST() {
         if (!device.preferredStatusKey && device.activeStatusKey) {
           updatePayload.preferredStatusKey = device.activeStatusKey;
           updatePayload.preferredStatusLabel = device.activeStatusLabel ?? null;
-          }
-          await deviceRef.update(updatePayload);
-          await pushStatusToTrmnl(device, chosenKey, chosenLabel ?? "");
+        }
+        await deviceRef.update(updatePayload);
+        await pushStatusToTrmnl(device, chosenKey, chosenLabel ?? "");
+        if (chosenEndsAt) {
+          await scheduleCalendarCacheApply(device.deviceId, chosenEndsAt);
         }
       }
+    }
     }
 
     await deviceRef.update({ calendarCachedEvents: buildSameDayCache(cacheableEvents, now) });
@@ -383,6 +387,7 @@ async function applyCachedEvents(device: DeviceRecord, deviceRef: FirebaseFirest
       updatedAt: now,
     });
     await pushStatusToTrmnl(device, chosen.statusKey, label ?? "");
+    await scheduleCalendarCacheApply(device.deviceId, chosen.end);
   } else {
     await deviceRef.update({ calendarCachedEvents: cached });
   }
