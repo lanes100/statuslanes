@@ -106,6 +106,41 @@ export async function applyCachedEvents(
   if (!chosen) {
     await deviceRef.update({ calendarCachedEvents: cached });
     device.calendarCachedEvents = cached;
+    const fallbackKey =
+      (device.calendarIdleUsePreferred && device.preferredStatusKey) ||
+      (!device.calendarIdleUsePreferred && device.calendarIdleStatusKey)
+        ? device.calendarIdleUsePreferred
+          ? device.preferredStatusKey
+          : device.calendarIdleStatusKey
+        : device.preferredStatusKey || device.calendarIdleStatusKey || null;
+    if (fallbackKey) {
+      const fallbackLabel =
+        device.statuses?.find((s) => s.key === fallbackKey)?.label ??
+        (fallbackKey === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
+      const needsUpdate =
+        device.activeStatusKey !== fallbackKey ||
+        device.activeStatusLabel !== fallbackLabel ||
+        device.activeEventEndsAt !== null;
+      if (needsUpdate) {
+        device.activeStatusKey = fallbackKey ?? null;
+        device.activeStatusLabel = fallbackLabel ?? null;
+        device.activeStatusSource = sourceLabel;
+        device.activeEventEndsAt = null;
+        await deviceRef.update({
+          activeStatusKey: fallbackKey,
+          activeStatusLabel: fallbackLabel ?? null,
+          activeStatusSource: sourceLabel,
+          activeEventEndsAt: null,
+          updatedAt: now,
+          calendarCachedEvents: cached,
+        });
+        await pushStatusToTrmnl(device, fallbackKey, fallbackLabel ?? "", sourceLabel);
+        return true;
+      }
+    } else if (device.activeEventEndsAt && device.activeEventEndsAt <= now) {
+      await deviceRef.update({ activeEventEndsAt: null, calendarCachedEvents: cached });
+      device.activeEventEndsAt = null;
+    }
     return false;
   }
   const label =
