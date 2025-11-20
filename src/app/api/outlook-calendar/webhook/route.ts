@@ -26,6 +26,16 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const validationToken = searchParams.get("validationToken");
+  if (validationToken) {
+    return new Response(validationToken, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/plain",
+      },
+    });
+  }
   try {
     const raw = await request.text();
     const body = raw ? JSON.parse(raw) : {};
