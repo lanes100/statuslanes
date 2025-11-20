@@ -142,6 +142,10 @@ export async function applyCachedEvents(
       await deviceRef.update({ activeEventEndsAt: null, calendarCachedEvents: cached });
       device.activeEventEndsAt = null;
     }
+    const upcoming = cached.find((ev) => ev.start > now);
+    if (upcoming) {
+      await scheduleCalendarCacheApply(device.deviceId, upcoming.start);
+    }
     return false;
   }
   const label =
@@ -163,10 +167,18 @@ export async function applyCachedEvents(
     });
     await pushStatusToTrmnl(device, chosen.statusKey, label ?? "", sourceLabel);
     await scheduleCalendarCacheApply(device.deviceId, chosen.end);
+    const nextEvent = cached.find((ev) => ev.start > now && ev.start > chosen.end);
+    if (nextEvent) {
+      await scheduleCalendarCacheApply(device.deviceId, nextEvent.start);
+    }
     return true;
   }
   await deviceRef.update({ calendarCachedEvents: cached });
   device.calendarCachedEvents = cached;
+  const nextUpcoming = cached.find((ev) => ev.start > now);
+  if (nextUpcoming) {
+    await scheduleCalendarCacheApply(device.deviceId, nextUpcoming.start);
+  }
   return false;
 }
 
