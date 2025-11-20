@@ -62,6 +62,7 @@ Comprehensive context for coding assistant.
 - Settings UI exposes “Previous manual selection” for idle, video mapping select, clearer labels; Google action buttons layout adjusted and light-gray styling.
 - Calendar sync logic stores event end times and extends through back-to-back events with the same mapping (Google bulk/manual/self and ICS bulk/self) to avoid dropping status between consecutive meetings.
 - `/about` (privacy policy) and `/terms` are public, linked in the menu and login/settings. Signup requires ticking Privacy + Terms checkboxes (works for Google signup too). About page has a back button; Terms page added.
+- Theme system now runs on `next-themes` with class-based Tailwind dark mode; toggle appears in the user menu plus login header, and all major pages (home, login, settings) swap their backgrounds + components between light/dark palettes.
 - Status pushes: `/api/device` autosaves now resend the current status text/source/timestamp to keep TRMNL populated; sync endpoints store `activeStatusSource` (“Google Calendar”/“ICS”/“StatusLanes”) and only push on changes. Manual cron runs use cached events. Calendar window now only considers events starting within 5 minutes.
 
 ## Next action item
