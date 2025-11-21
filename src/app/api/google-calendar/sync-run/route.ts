@@ -294,7 +294,12 @@ export async function POST(request: Request) {
         .update({ syncToken: syncState.syncToken ?? null, lastSyncedAt: now, manualSyncRequestedAt: null });
 
       // After processing all calendars, update cache for today
-    await deviceRef.update({ calendarCachedEvents: buildSameDayCache(cacheableEvents, now) });
+      const cacheForToday = buildSameDayCache(cacheableEvents, now);
+      await deviceRef.update({ calendarCachedEvents: cacheForToday });
+      const nextUpcoming = cacheForToday.find((ev) => ev.start > now);
+      if (nextUpcoming) {
+        await scheduleCalendarCacheApply(device.deviceId, nextUpcoming.start);
+      }
     }
 
     return NextResponse.json({ ok: true }, { status: 200 });

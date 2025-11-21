@@ -142,7 +142,12 @@ export async function runOutlookSyncForUser(
     }
   }
 
-  await deviceRef.update({ calendarCachedEvents: buildSameDayCache(cacheableEvents, now) });
+  const cacheForToday = buildSameDayCache(cacheableEvents, now);
+  await deviceRef.update({ calendarCachedEvents: cacheForToday });
+  const nextUpcoming = cacheForToday.find((ev) => ev.start > now);
+  if (nextUpcoming) {
+    await scheduleCalendarCacheApply(device.deviceId, nextUpcoming.start);
+  }
 
   return { changed };
 }
