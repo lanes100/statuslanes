@@ -52,6 +52,13 @@ export default async function Home() {
             )}
           </section>
         </main>
+        {!user ? (
+          <footer className="mt-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
+            <Link href="/about" className="underline underline-offset-4 hover:text-zinc-700 dark:hover:text-zinc-200">
+              Privacy Policy & Terms
+            </Link>
+          </footer>
+        ) : null}
       </div>
     </div>
   );
