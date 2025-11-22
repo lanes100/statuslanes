@@ -3,10 +3,12 @@ import { adminDb } from "@/lib/firebaseAdmin";
 import ICAL from "ical.js";
 import { decrypt } from "@/lib/crypto";
 import { scheduleCalendarCacheApply } from "@/lib/calendarHeartbeat";
+import { saveUserStatusRecord } from "@/lib/userStatus";
 
 type DeviceRecord = {
   deviceId: string;
   userId: string;
+  deviceName?: string;
   calendarIcsUrl?: string | null;
   calendarIds?: string[];
   calendarKeywords?: string[];
@@ -26,6 +28,12 @@ type DeviceRecord = {
   calendarIdleUsePreferred?: boolean;
   calendarCachedEvents?: { start: number; end: number; statusKey: number | null }[];
   activeEventEndsAt?: number | null;
+  timezone?: string;
+  dateFormat?: string;
+  timeFormat?: string;
+  showLastUpdated?: boolean;
+  showStatusSource?: boolean;
+  webhookUrlEncrypted?: string;
 };
 
 const BATCH_DEVICES = 5;
@@ -229,32 +237,47 @@ export async function POST(request: Request) {
 }
 
 async function pushStatusToTrmnl(device: DeviceRecord, statusKey: number | null, statusLabel: string) {
-  const webhookUrlEncrypted = (device as any).webhookUrlEncrypted as string | undefined;
-  if (!webhookUrlEncrypted) return;
-  const webhookUrl = decrypt(webhookUrlEncrypted);
-  const timestamp = formatTimestamp(
-    Date.now(),
-    (device as any).timezone || "UTC",
-    (device as any).dateFormat || "MDY",
-    (device as any).timeFormat || "24h",
-  );
+  if (!statusKey || !device.webhookUrlEncrypted) return;
+  const webhookUrl = decrypt(device.webhookUrlEncrypted);
+  if (!webhookUrl) return;
+  const fallback = device.statuses?.find((s) => s.key === statusKey)?.label || "";
+  const resolvedLabel = statusLabel || fallback;
+  const timezone = device.timezone ?? "UTC";
+  const dateFormat = device.dateFormat ?? "MDY";
+  const timeFormat = device.timeFormat ?? "24h";
+  const updatedAt = Date.now();
+  const formattedUpdatedAt = formatTimestamp(updatedAt, timezone, dateFormat, timeFormat);
+  const source = device.activeStatusSource ?? "ICS";
   try {
     await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         merge_variables: {
-          status_text: statusLabel,
-          status_source: "ICS",
-          show_last_updated: (device as any).showLastUpdated ?? true,
-          show_status_source: (device as any).showStatusSource ?? false,
-          updated_at: timestamp,
+          status_text: resolvedLabel,
+          show_last_updated: device.showLastUpdated ?? true,
+          show_status_source: device.showStatusSource ?? false,
+          status_source: source,
+          updated_at: formattedUpdatedAt,
         },
         merge_strategy: "replace",
       }),
     });
   } catch (err) {
     console.error("pushStatusToTrmnl failed", err);
+  }
+  if (device.userId) {
+    await saveUserStatusRecord({
+      uid: device.userId,
+      text: resolvedLabel,
+      personName: device.deviceName ?? "Statuslanes user",
+      source,
+      statusKey,
+      statusLabel: resolvedLabel,
+      deviceId: device.deviceId,
+      updatedAt,
+      timezone,
+    });
   }
 }
 

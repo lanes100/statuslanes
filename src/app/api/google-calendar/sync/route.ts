@@ -4,6 +4,7 @@ import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
 import { getOAuthClient, getCalendarClient } from "@/lib/google";
 import { decrypt } from "@/lib/crypto";
 import { scheduleCalendarCacheApply } from "@/lib/calendarHeartbeat";
+import { saveUserStatusRecord } from "@/lib/userStatus";
 
 const SESSION_COOKIE_NAME = "statuslanes_session";
 
@@ -56,6 +57,7 @@ export async function POST() {
 export type DeviceRecord = {
   deviceId: string;
   userId: string;
+  deviceName?: string;
   calendarIds?: string[];
   outlookCalendarIds?: string[];
   calendarKeywords?: string[];
@@ -265,18 +267,27 @@ export async function runGoogleSyncForUser(
   }
 
 async function pushStatusToTrmnl(device: DeviceRecord, statusKey: number | null, statusLabel: string) {
+  if (!statusKey) return;
   const webhookUrlEncrypted = device.webhookUrlEncrypted;
   if (!webhookUrlEncrypted) return;
   const webhookUrl = decrypt(webhookUrlEncrypted);
-  const timestamp = formatTimestamp(Date.now(), device.timezone || "UTC", device.dateFormat || "MDY", device.timeFormat || "24h");
+  if (!webhookUrl) return;
+  const fallback = device.statuses?.find((s) => s.key === statusKey)?.label || "";
+  const resolvedLabel = statusLabel || fallback;
+  const timezone = device.timezone || "UTC";
+  const dateFormat = device.dateFormat || "MDY";
+  const timeFormat = device.timeFormat || "24h";
+  const updatedAt = Date.now();
+  const timestamp = formatTimestamp(updatedAt, timezone, dateFormat, timeFormat);
+  const source = device.activeStatusSource ?? "Google Calendar";
   try {
     await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         merge_variables: {
-          status_text: statusLabel,
-          status_source: "Google Calendar",
+          status_text: resolvedLabel,
+          status_source: source,
           show_last_updated: device.showLastUpdated ?? true,
           show_status_source: device.showStatusSource ?? false,
           updated_at: timestamp,
@@ -286,6 +297,19 @@ async function pushStatusToTrmnl(device: DeviceRecord, statusKey: number | null,
     });
   } catch (err) {
     console.error("pushStatusToTrmnl failed", err);
+  }
+  if (device.userId) {
+    await saveUserStatusRecord({
+      uid: device.userId,
+      text: resolvedLabel,
+      personName: device.deviceName ?? "Statuslanes user",
+      source,
+      statusKey,
+      statusLabel: resolvedLabel,
+      deviceId: device.deviceId,
+      updatedAt,
+      timezone,
+    });
   }
 }
 

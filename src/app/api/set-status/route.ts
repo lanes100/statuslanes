@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
 import { cookies } from "next/headers";
 import { decrypt } from "@/lib/crypto";
+import { saveUserStatusRecord } from "@/lib/userStatus";
 
 const SESSION_COOKIE_NAME = "statuslanes_session";
 
@@ -87,10 +88,24 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       { success: true, activeStatusKey: statusKey, activeStatusLabel: statusLabel, updatedAt },
       { status: 200 },
     );
+
+    await saveUserStatusRecord({
+      uid: user.uid,
+      text: statusLabel,
+      personName: (data.deviceName as string | undefined) ?? user.email ?? "Statuslanes user",
+      source: statusSource,
+      statusKey: statusKey ?? null,
+      statusLabel,
+      deviceId,
+      updatedAt,
+      timezone: (data.timezone as string | undefined) ?? undefined,
+    });
+
+    return response;
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "UNAUTHENTICATED") {
       return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });

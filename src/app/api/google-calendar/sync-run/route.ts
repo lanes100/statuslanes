@@ -4,6 +4,7 @@ import { decrypt } from "@/lib/crypto";
 import { scheduleCalendarCacheApply } from "@/lib/calendarHeartbeat";
 import { getOAuthClient, getCalendarClient } from "@/lib/google";
 import { ensureCalendarWatchesForDevice } from "@/lib/googleCalendarWatch";
+import { saveUserStatusRecord } from "@/lib/userStatus";
 
 type SyncState = {
   syncToken?: string | null;
@@ -13,6 +14,7 @@ type SyncState = {
 type DeviceRecord = {
   deviceId: string;
   userId: string;
+  deviceName?: string;
   calendarIds?: string[];
   outlookCalendarIds?: string[];
   calendarKeywords?: string[];
@@ -310,32 +312,46 @@ export async function POST(request: Request) {
 }
 
 async function pushStatusToTrmnl(device: DeviceRecord, statusKey: number | null, statusLabel: string) {
-  const webhookUrlEncrypted = (device as any).webhookUrlEncrypted as string | undefined;
-  if (!webhookUrlEncrypted) return;
-  const webhookUrl = decrypt(webhookUrlEncrypted);
-  const timestamp = formatTimestamp(
-    Date.now(),
-    device.timezone || "UTC",
-    device.dateFormat || "MDY",
-    device.timeFormat || "24h",
-  );
+  if (!statusKey || !device.webhookUrlEncrypted) return;
+  const webhookUrl = decrypt(device.webhookUrlEncrypted);
+  if (!webhookUrl) return;
+  const status = statusLabel || device.statuses?.find((s) => s.key === statusKey)?.label || "";
+  const timezone = device.timezone ?? "UTC";
+  const dateFormat = device.dateFormat ?? "MDY";
+  const timeFormat = device.timeFormat ?? "24h";
+  const updatedAt = Date.now();
+  const formattedUpdatedAt = formatTimestamp(updatedAt, timezone, dateFormat, timeFormat);
+  const source = device.activeStatusSource ?? "Google Calendar";
   try {
     await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         merge_variables: {
-          status_text: statusLabel,
-          status_source: "Google Calendar",
-          show_last_updated: (device as any).showLastUpdated ?? true,
-          show_status_source: (device as any).showStatusSource ?? false,
-          updated_at: timestamp,
+          status_text: status,
+          show_last_updated: device.showLastUpdated ?? true,
+          show_status_source: device.showStatusSource ?? false,
+          status_source: source,
+          updated_at: formattedUpdatedAt,
         },
         merge_strategy: "replace",
       }),
     });
   } catch (err) {
     console.error("pushStatusToTrmnl failed", err);
+  }
+  if (device.userId) {
+    await saveUserStatusRecord({
+      uid: device.userId,
+      text: status,
+      personName: device.deviceName ?? "Statuslanes user",
+      source,
+      statusKey,
+      statusLabel: statusLabel || status,
+      deviceId: device.deviceId,
+      updatedAt,
+      timezone,
+    });
   }
 }
 

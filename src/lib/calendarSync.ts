@@ -1,11 +1,13 @@
 import { decrypt } from "@/lib/crypto";
 import { scheduleCalendarCacheApply } from "@/lib/calendarHeartbeat";
+import { saveUserStatusRecord } from "@/lib/userStatus";
 
 export type CachedEvent = { start: number; end: number; statusKey: number | null };
 
 export type DeviceRecord = {
   deviceId: string;
   userId: string;
+  deviceName?: string;
   calendarIds?: string[];
   outlookCalendarIds?: string[];
   calendarIcsUrl?: string | null;
@@ -182,12 +184,7 @@ export async function applyCachedEvents(
   return false;
 }
 
-export async function pushStatusToTrmnl(
-  device: DeviceRecord,
-  statusKey: number | null,
-  statusLabel: string,
-  sourceOverride?: string,
-) {
+export async function pushStatusToTrmnl(device: DeviceRecord, statusKey: number | null, statusLabel: string, sourceOverride?: string) {
   if (!statusKey || !device.webhookUrlEncrypted) return;
   const webhookUrl = decrypt(device.webhookUrlEncrypted);
   if (!webhookUrl) return;
@@ -195,7 +192,9 @@ export async function pushStatusToTrmnl(
   const timezone = device.timezone ?? "UTC";
   const dateFormat = device.dateFormat ?? "MDY";
   const timeFormat = device.timeFormat ?? "24h";
-  const formattedUpdatedAt = formatTimestamp(Date.now(), timezone, dateFormat, timeFormat);
+  const updatedAt = Date.now();
+  const formattedUpdatedAt = formatTimestamp(updatedAt, timezone, dateFormat, timeFormat);
+  const sourceLabel = sourceOverride ?? device.activeStatusSource ?? "Calendar";
   try {
     await fetch(webhookUrl, {
       method: "POST",
@@ -205,7 +204,7 @@ export async function pushStatusToTrmnl(
           status_text: status,
           show_last_updated: device.showLastUpdated ?? true,
           show_status_source: device.showStatusSource ?? false,
-          status_source: sourceOverride ?? device.activeStatusSource ?? "Calendar",
+          status_source: sourceLabel,
           updated_at: formattedUpdatedAt,
         },
         merge_strategy: "replace",
@@ -213,6 +212,20 @@ export async function pushStatusToTrmnl(
     });
   } catch (err) {
     console.error("pushStatusToTrmnl failed", err);
+  }
+
+  if (device.userId) {
+    await saveUserStatusRecord({
+      uid: device.userId,
+      text: status,
+      personName: device.deviceName ?? "Statuslanes user",
+      source: sourceLabel,
+      statusKey,
+      statusLabel: statusLabel || status,
+      deviceId: device.deviceId,
+      updatedAt,
+      timezone,
+    });
   }
 }
 

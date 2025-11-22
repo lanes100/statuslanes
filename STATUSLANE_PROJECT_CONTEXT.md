@@ -78,3 +78,12 @@ Comprehensive context for coding assistant.
 - Privacy link now lives on the homepage footer; `/about` hosts the combined Privacy/Terms page that Google checks for.
 
 ## End of file
+
+## TRMNL public plugin flow (Marketplace)
+- OAuth install callback: `POST /api/trmnl/install` exchanges the `installation_token` for TRMNL access/refresh tokens and stores them under `/trmnl/{plugin_setting_id}`.
+- Dashboard linking: `POST /api/manage/link` (auth required) associates the signed-in Firebase user with a given `plugin_setting_id`.
+- Screen generation: `POST /api/trmnl/markup` validates the TRMNL Bearer token via `/plugin-settings/me`, loads `/trmnl/{plugin_setting_id}` plus `/users/{uid}/status/current`, and returns markup/half/quadrant payloads for TRMNL.
+- Uninstall cleanup: `POST /api/trmnl/uninstall` deletes `/trmnl/{plugin_setting_id}` when TRMNL calls the uninstall webhook; Authorization tokens are revalidated when present.
+- Token refresh: `POST /api/trmnl/refresh_oauth` (secured by `x-sync-secret` when configured) refreshes expiring tokens.
+- Status persistence: all status updates write to `/users/{uid}/status/current` with `{ text, personName, source, statusKey, statusLabel, deviceId, timezone, updatedAt }`, so TRMNL pull-based plugins can render instantly even if webhook pushes fail temporarily.
+
