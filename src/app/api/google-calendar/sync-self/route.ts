@@ -40,6 +40,12 @@ type DeviceRecord = {
   calendarCachedEvents?: CachedEvent[];
   activeEventEndsAt?: number | null;
   activeStatusSource?: string | null;
+  timezone?: string;
+  dateFormat?: string;
+  timeFormat?: string;
+  showLastUpdated?: boolean;
+  showStatusSource?: boolean;
+  webhookUrlEncrypted?: string;
 };
 
 type CachedEvent = { start: number; end: number; statusKey: number | null };
