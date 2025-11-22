@@ -18,9 +18,9 @@ export type RenderStatusMarkupOptions =
       personName: string;
       statusText: string;
       statusSource?: string | null;
-      updatedAt?: number | null;
-      timezone?: string | null;
-      managementUrl?: string | null;
+      updatedAtText?: string | null;
+      showLastUpdated?: boolean;
+      showStatusSource?: boolean;
     }
   | {
       variant: "no-status" | "unlinked" | "error";
@@ -126,59 +126,298 @@ function getRequiredEnv(key: string): string {
 }
 
 export function renderStatusMarkup(options: RenderStatusMarkupOptions): TrmnlMarkupResponse {
-  let heading = "Statuslanes";
-  let body = "Connecting…";
-  let meta = "";
   if (options.variant === "ready") {
-    heading = options.personName;
-    body = `Currently, I am ${escapeHtml(options.statusText)}`;
-    const parts: string[] = [];
-    if (options.statusSource) parts.push(`Source: ${escapeHtml(options.statusSource)}`);
-    if (options.updatedAt) {
-      parts.push(`Updated ${formatTimestamp(options.updatedAt, options.timezone ?? "UTC")}`);
+    return buildStatusLayouts({
+      personName: options.personName,
+      statusText: options.statusText,
+      statusSource: options.statusSource ?? null,
+      updatedAtText: options.updatedAtText ?? null,
+      showLastUpdated: options.showLastUpdated,
+      showStatusSource: options.showStatusSource,
+    });
+  }
+
+  const baseName = options.personName?.trim() || "Statuslanes";
+  let statusMessage = options.message?.trim();
+  if (!statusMessage) {
+    if (options.variant === "unlinked") {
+      statusMessage = options.managementUrl
+        ? `Connect this plugin at ${options.managementUrl}`
+        : "Connect this plugin to Statuslanes to finish setup.";
+    } else if (options.variant === "no-status") {
+      statusMessage = "No recent status yet—set one in Statuslanes.";
+    } else {
+      statusMessage = "Status temporarily unavailable.";
     }
-    meta = parts.join(" • ");
-  } else if (options.variant === "no-status") {
-    heading = options.personName?.trim() || "Statuslanes";
-    body = "No status yet";
-    meta = "Update your status in the Statuslanes dashboard.";
-  } else if (options.variant === "unlinked") {
-    heading = "Connect Statuslanes";
-    body = "Visit the Statuslanes dashboard to link this TRMNL plugin.";
-    meta = options.managementUrl ? `Open ${escapeHtml(options.managementUrl)} to finish setup.` : "";
-  } else if (options.variant === "error") {
-    heading = "Status unavailable";
-    body = options.message?.trim() || "We ran into a temporary error.";
   }
-  if (!meta && options.managementUrl && options.variant !== "ready") {
-    meta = `Manage at ${escapeHtml(options.managementUrl)}`;
-  }
-  const markup = buildMarkup("view--full", heading, body, meta);
+  const source = options.managementUrl && options.variant !== "error" ? `Manage at ${options.managementUrl}` : null;
+
+  return buildStatusLayouts({
+    personName: baseName,
+    statusText: statusMessage,
+    statusSource: source,
+    updatedAtText: null,
+    showLastUpdated: false,
+    showStatusSource: Boolean(source),
+  });
+}
+
+type LayoutPayload = {
+  personName: string;
+  statusText: string;
+  statusSource?: string | null;
+  updatedAtText?: string | null;
+  showLastUpdated?: boolean;
+  showStatusSource?: boolean;
+};
+
+function buildStatusLayouts(data: LayoutPayload): TrmnlMarkupResponse {
+  const personName = data.personName?.trim().length ? data.personName.trim() : "Statuslanes user";
+  const statusText = data.statusText?.trim().length ? data.statusText.trim() : "Updating my status…";
+  const personHtml = escapeHtml(personName);
+  const statusHtml = applyEmojiWrapping(escapeHtml(statusText));
+  const updatedHtmlRaw = data.updatedAtText?.trim() ?? "";
+  const updatedHtml = updatedHtmlRaw ? escapeHtml(updatedHtmlRaw) : "";
+  const sourceHtmlRaw = data.statusSource?.trim() ?? "";
+  const sourceHtml = sourceHtmlRaw ? escapeHtml(sourceHtmlRaw) : "";
+  const showUpdated = Boolean(data.showLastUpdated && updatedHtml);
+  const showSource = Boolean(data.showStatusSource && sourceHtml);
+
   return {
-    markup,
-    markup_half_horizontal: buildMarkup("view--half_horizontal", heading, body, meta),
-    markup_half_vertical: buildMarkup("view--half_vertical", heading, body, meta),
-    markup_quadrant: buildMarkup("view--quadrant", heading, body, meta),
-    shared: "",
+    markup: buildFullLayout(personHtml, statusHtml, showUpdated, updatedHtml, showSource, sourceHtml),
+    markup_half_horizontal: buildHalfHorizontalLayout(personHtml, statusHtml, showUpdated, updatedHtml, showSource, sourceHtml),
+    markup_half_vertical: buildHalfVerticalLayout(personHtml, statusHtml, showUpdated, updatedHtml, showSource, sourceHtml),
+    markup_quadrant: buildQuadrantLayout(personHtml, statusHtml, showUpdated, updatedHtml, showSource, sourceHtml),
+    shared: SHARED_MARKUP,
   };
 }
 
-function buildMarkup(viewClass: string, heading: string, body: string, meta?: string): string {
-  const metaBlock = meta ? `<div class="text--xs text--muted mt--4">${escapeHtml(meta)}</div>` : "";
+function buildFullLayout(
+  personHtml: string,
+  statusHtml: string,
+  showUpdated: boolean,
+  updatedHtml: string,
+  showSource: boolean,
+  sourceHtml: string,
+): string {
   return `
-<div class="view ${viewClass}">
-  <div class="layout layout--full layout--col layout--left h--full">
-    <div class="p--6">
-      <div class="text--left">
-        <div class="value value--xlarge">${escapeHtml(heading)}</div>
+<!-- MAIN CONTENT AREA -->
+<div class="layout layout--full layout--col layout--left h--full">
+  <div class="p--6">
+
+    <!-- Person Name -->
+    <div class="text--left">
+      <div class="value value--xlarge" style="white-space: normal; word-break: break-word;">
+        ${personHtml}
       </div>
-      <div class="text--left mt--6 mb--1">
-        <span class="value value--med">${body}</span>
-      </div>
-      ${metaBlock}
+    </div>
+
+    <!-- Status -->
+    <div class="text--left mt--6">
+      <span class="value value--med" style="white-space: normal; word-break: break-word;">
+        Currently, I am ${statusHtml}
+      </span>
+    </div>
+
+  </div>
+</div>
+
+${buildPrimaryFooter(showUpdated, updatedHtml, showSource, sourceHtml)}
+  `.trim();
+}
+
+function buildHalfHorizontalLayout(
+  personHtml: string,
+  statusHtml: string,
+  showUpdated: boolean,
+  updatedHtml: string,
+  showSource: boolean,
+  sourceHtml: string,
+): string {
+  return `
+<div class="layout layout--full layout--col layout--left h--full p--6">
+
+  <!-- Person Name -->
+  <div class="text--left">
+    <div class="value value--large" style="white-space: normal; word-break: break-word;">
+      ${personHtml}
     </div>
   </div>
-</div>`.trim();
+
+  <!-- Status -->
+  <div class="text--left mt--6">
+    <span class="value value--small" style="white-space: normal; word-break: break-word;">
+      Currently, I am ${statusHtml}
+    </span>
+  </div>
+
+</div>
+
+${buildPrimaryFooter(showUpdated, updatedHtml, showSource, sourceHtml)}
+  `.trim();
+}
+
+function buildHalfVerticalLayout(
+  personHtml: string,
+  statusHtml: string,
+  showUpdated: boolean,
+  updatedHtml: string,
+  showSource: boolean,
+  sourceHtml: string,
+): string {
+  return `
+<div class="layout layout--full layout--col layout--left h--full p--6">
+
+  <!-- Person Name -->
+  <div class="text--left mt--1">
+    <div class="value value--large" style="white-space: normal; word-break: break-word;">
+      ${personHtml}
+    </div>
+  </div>
+
+  <!-- Spacer to push status toward bottom -->
+  <div class="grow"></div>
+
+  <!-- "Currently, I am" -->
+  <div class="text--left mt--1">
+    <span class="value value--small">
+      Currently, I am
+    </span>
+  </div>
+
+  <!-- Status -->
+  <div class="text--left mt--0">
+    <span class="value value--small" style="white-space: normal; word-break: break-word;">
+      ${statusHtml}
+    </span>
+  </div>
+
+</div>
+
+${buildSecondaryFooter(showUpdated, updatedHtml, showSource, sourceHtml)}
+  `.trim();
+}
+
+function buildQuadrantLayout(
+  personHtml: string,
+  statusHtml: string,
+  showUpdated: boolean,
+  updatedHtml: string,
+  showSource: boolean,
+  sourceHtml: string,
+): string {
+  return `
+<div class="layout layout--full layout--col layout--left h--full p--6">
+
+  <!-- Name -->
+  <div class="text--left mt--1">
+    <div class="value value--med" style="white-space: normal; word-break: break-word;">
+      ${personHtml}
+    </div>
+  </div>
+
+  <!-- Spacer -->
+  <div class="grow"></div>
+
+  <!-- "Currently I am" -->
+  <div class="text--left mt--1">
+    <span class="value value--small">
+      Currently, I am
+    </span>
+  </div>
+
+  <!-- Status Label -->
+  <div class="text--left mt--0">
+    <span class="value value--small" style="white-space: normal; word-break: break-word;">
+      ${statusHtml}
+    </span>
+  </div>
+
+</div>
+
+${buildSecondaryFooter(showUpdated, updatedHtml, showSource, sourceHtml)}
+  `.trim();
+}
+
+function buildPrimaryFooter(showUpdated: boolean, updatedHtml: string, showSource: boolean, sourceHtml: string): string {
+  const updated = showUpdated ? `Updated ${updatedHtml}` : "";
+  const separator = showUpdated && showSource ? " &middot; " : "";
+  const source = showSource ? sourceHtml : "";
+  return `
+<!-- TITLE BAR FOOTER -->
+<div class="title_bar">
+  <span class="title">My Status</span>
+
+  <span class="instance">
+    ${updated}${separator}${source}
+  </span>
+</div>
+  `.trim();
+}
+
+function buildSecondaryFooter(showUpdated: boolean, updatedHtml: string, showSource: boolean, sourceHtml: string): string {
+  const updated = showUpdated ? `Updated ${updatedHtml}` : "";
+  const source = showSource ? sourceHtml : "";
+  return `
+<!-- FOOTER BAR (TRMNL-standard) -->
+<div class="title_bar">
+  <span class="title">
+    ${updated}
+  </span>
+
+  <span class="instance">
+    ${source}
+  </span>
+</div>
+  `.trim();
+}
+
+const SHARED_MARKUP = `
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Emoji:wght@300&display=swap" rel="stylesheet">
+
+<style>
+  .emoji {
+    font-family: "Noto Emoji", sans-serif;
+    font-weight: 300;
+  }
+</style>
+`.trim();
+
+const RAW_EMOJI_LIST = `
+🏢,🏠,👥,🔕,🌴,🍽,
+💼,📅,📁,📂,🗂️,📝,📌,⏳,⌛,
+📞,📣,📧,📡,💬,📨,📤,📥,
+⭐,✨,⚡,🔥,🚨,🛑,⚠️,🔔,🔕,🎯,📍,🧭,
+🕐,🕑,🕒,🕓,🕔,🕕,🕖,🕗,🕘,🕙,🕚,🕛,
+⏰,⏱️,⏲️,🗓️,
+😀,😃,😄,😁,😆,😅,🤣,😂,🙂,🙃,😉,😊,😇,
+😐,😑,😶,🙄,😮,😯,😲,😴,🥱,😪,😵,🤯,
+😎,😕,😞,😔,😣,😩,😫,😤,😡,😠,😢,😭,
+🥰,😍,🤩,😏,😌,🥹,
+💻,🖥️,⌨️,🖱️,🗄️,📊,📈,📉,🧩,🛠️,🧰,🔧,⚙️,
+✈️,🛫,🛬,🚗,🚕,🚙,🚆,🚉,🚌,🚇,🛣️,
+🌍,🌎,🌏,📍,
+🍽,🍱,🍔,🍕,🍜,🍲,☕,🍵,🥤,🧃,
+🌤️,⛅,☁️,🌧️,🌦️,❄️,🌩️,🌪️,🌈,🌞,🌙,⭐,
+✔️,❌,➕,➖,➡️,⬅️,🔄,🔁,♻️,💡,🔒,🔓,
+🤒,🤕,🤢,🤮,🤧,
+😷,😴,😪,😵,😞,😩,😫,
+🛌,💤,😌,
+💊,🩹,🩺,🩼,🧪,🧫,
+🏥,🚑,
+😔,😟,😕,😣,😖
+`;
+
+const EMOJI_LIST = RAW_EMOJI_LIST.split(",").map((item) => item.trim()).filter((item) => item.length > 0);
+
+function applyEmojiWrapping(html: string): string {
+  let output = html;
+  for (const emoji of EMOJI_LIST) {
+    output = output.split(emoji).join(`<span class="emoji">${emoji}</span>`);
+  }
+  return output;
 }
 
 function escapeHtml(value: string): string {
@@ -188,19 +427,4 @@ function escapeHtml(value: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-}
-
-function formatTimestamp(timestamp: number, timezone: string): string {
-  try {
-    const formatter = new Intl.DateTimeFormat("en-US", {
-      timeZone: timezone,
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-    return formatter.format(new Date(timestamp));
-  } catch {
-    return new Date(timestamp).toISOString();
-  }
 }

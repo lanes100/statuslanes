@@ -23,25 +23,43 @@ export async function POST(request: Request) {
 
   try {
     let pluginSettingId: string;
+    let customFields: Record<string, string> = {};
     try {
       const pluginInfo = await fetchPluginSettings(token);
       pluginSettingId = pluginInfo.pluginSettingId;
+      const cf = (pluginInfo.raw?.custom_fields_values ?? {}) as Record<string, unknown>;
+      customFields = Object.fromEntries(
+        Object.entries(cf)
+          .filter(([, value]) => typeof value === "string")
+          .map(([key, value]) => [key, (value as string).trim()]),
+      );
     } catch (error) {
       if (error instanceof Error && error.message.includes("401")) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
       throw error;
     }
+    const cfPersonName = customFields.person_name && customFields.person_name.length > 0 ? customFields.person_name : undefined;
+    const cfDefaultStatus =
+      customFields.default_status && customFields.default_status.length > 0 ? customFields.default_status : undefined;
 
     const installationSnap = await adminDb.collection("trmnl").doc(pluginSettingId).get();
     if (!installationSnap.exists) {
-      const markup = renderStatusMarkup({ variant: "unlinked", managementUrl: MANAGEMENT_URL });
+      const markup = renderStatusMarkup({
+        variant: "unlinked",
+        personName: cfPersonName,
+        managementUrl: MANAGEMENT_URL,
+      });
       return NextResponse.json(markup, { status: 200 });
     }
     const installation = installationSnap.data() ?? {};
     const linkedUserId = installation.linkedUserId as string | undefined;
     if (!linkedUserId) {
-      const markup = renderStatusMarkup({ variant: "unlinked", managementUrl: MANAGEMENT_URL });
+      const markup = renderStatusMarkup({
+        variant: "unlinked",
+        personName: cfPersonName,
+        managementUrl: MANAGEMENT_URL,
+      });
       return NextResponse.json(markup, { status: 200 });
     }
 
@@ -49,20 +67,23 @@ export async function POST(request: Request) {
     if (!userStatus) {
       const markup = renderStatusMarkup({
         variant: "no-status",
-        personName: (installation.deviceName as string | undefined) ?? "Statuslanes",
+        personName: cfPersonName ?? (installation.deviceName as string | undefined) ?? "Statuslanes",
+        message: cfDefaultStatus ?? "Working hard",
         managementUrl: MANAGEMENT_URL,
       });
       return NextResponse.json(markup, { status: 200 });
     }
+    const timezone = userStatus.timezone ?? (installation.timezone as string | undefined) ?? "UTC";
+    const updatedAtText = userStatus.updatedAtText ?? formatUpdatedAtText(userStatus.updatedAt, timezone);
 
     const markup = renderStatusMarkup({
       variant: "ready",
-      personName: userStatus.personName,
-      statusText: userStatus.text,
+      personName: userStatus.personName || cfPersonName || "Statuslanes",
+      statusText: userStatus.text || cfDefaultStatus || "Working hard",
       statusSource: userStatus.source,
-      updatedAt: userStatus.updatedAt,
-      timezone: userStatus.timezone ?? (installation.timezone as string | undefined) ?? "UTC",
-      managementUrl: MANAGEMENT_URL,
+      updatedAtText,
+      showLastUpdated: userStatus.showLastUpdated,
+      showStatusSource: userStatus.showStatusSource,
     });
     return NextResponse.json(markup, { status: 200 });
   } catch (error) {
@@ -70,8 +91,23 @@ export async function POST(request: Request) {
     const markup = renderStatusMarkup({
       variant: "error",
       message: "Please try again shortly.",
-      managementUrl: MANAGEMENT_URL,
     });
     return NextResponse.json(markup, { status: 200 });
+  }
+}
+
+function formatUpdatedAtText(timestamp?: number | null, timezone?: string | null): string | null {
+  if (!timestamp) return null;
+  const safeTimezone = timezone && timezone.trim().length > 0 ? timezone : "UTC";
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: safeTimezone,
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(new Date(timestamp));
+  } catch {
+    return new Date(timestamp).toLocaleString();
   }
 }

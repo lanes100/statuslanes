@@ -280,6 +280,9 @@ async function pushStatusToTrmnl(device: DeviceRecord, statusKey: number | null,
       deviceId: device.deviceId,
       updatedAt,
       timezone,
+      updatedAtText: formattedUpdatedAt,
+      showLastUpdated: Boolean(device.showLastUpdated ?? true),
+      showStatusSource: Boolean(device.showStatusSource ?? false),
     });
   }
 }

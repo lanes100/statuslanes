@@ -225,6 +225,9 @@ export async function pushStatusToTrmnl(device: DeviceRecord, statusKey: number 
       deviceId: device.deviceId,
       updatedAt,
       timezone,
+      updatedAtText: formattedUpdatedAt,
+      showLastUpdated: Boolean(device.showLastUpdated ?? true),
+      showStatusSource: Boolean(device.showStatusSource ?? false),
     });
   }
 }

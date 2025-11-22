@@ -103,6 +103,9 @@ export async function POST(request: Request) {
       deviceId,
       updatedAt,
       timezone: (data.timezone as string | undefined) ?? undefined,
+      updatedAtText: formattedTimestamp,
+      showLastUpdated: Boolean(data.showLastUpdated ?? true),
+      showStatusSource: Boolean(data.showStatusSource ?? false),
     });
 
     return response;
