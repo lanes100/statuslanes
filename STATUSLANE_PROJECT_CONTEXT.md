@@ -70,4 +70,11 @@ Comprehensive context for coding assistant.
 - Create/use a dedicated production Google OAuth Web client without loopback/localhost redirects to clear the “Use secure flows” warning. Add only prod origins/redirects, move localhost to a separate dev client, and point prod `GOOGLE_CLIENT_ID/SECRET` at the clean client.
 - Implement Outlook webhook/subscription lifecycle (Graph `subscriptions`) plus cron refresh so Outlook sync no longer relies solely on manual button presses.
 
+## Baton Pass
+- Cloud Tasks drives Google/Outlook transitions. Env vars needed in prod: `SYNC_BASE_URL`, `SYNC_SECRET`, `GOOGLE_APPLICATION_CREDENTIALS_JSON`, `GCP_PROJECT_ID`, `GCP_REGION` (or `GCP_LOCATION`), and optional `GCP_TASK_QUEUE` (defaults to `calendar-cache-queue`). Every sync enqueues start/end callbacks; check the queue in GCP console if flips stop occurring.
+- GitHub cron (`.github/workflows/cron-sync.yml`) now only runs `/api/ics-sync-run` once per minute for ICS users. Keep `/api/google-calendar/watch-refresh` + `/api/outlook-calendar/watch-refresh` workflow hourly to renew push channels.
+- `npm run heartbeat` (scripts/calendar-heartbeat.js) is available if you want an on-prem heartbeat as a fallback; it just POSTs `/api/calendar-cache/apply` using the same secret.
+- Remember to run “Sync now” after deploys so `ensureCalendarWatchesForDevice` recreates Google channels; otherwise the webhook won’t fire.
+- Privacy link now lives on the homepage footer; `/about` hosts the combined Privacy/Terms page that Google checks for.
+
 ## End of file
