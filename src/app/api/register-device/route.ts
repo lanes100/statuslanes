@@ -30,6 +30,18 @@ async function requireUser() {
   return { uid: decoded.uid, email: decoded.email ?? null };
 }
 
+async function resolveDeviceId(userId: string, incomingId?: string | null): Promise<string> {
+  const trimmed = incomingId?.trim();
+  if (trimmed) return trimmed;
+
+  const existingForUser = await adminDb.collection("devices").where("userId", "==", userId).limit(1).get();
+  if (!existingForUser.empty) {
+    return existingForUser.docs[0].id;
+  }
+
+  return `user-${userId}`;
+}
+
 function isValidTrmnlWebhook(url: string): boolean {
   try {
     const parsed = new URL(url);
@@ -83,7 +95,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid TRMNL webhook URL" }, { status: 400 });
     }
 
-    const deviceId = incomingDeviceId || "default";
+    const deviceId = await resolveDeviceId(user.uid, incomingDeviceId);
     const now = Date.now();
     const existing = await adminDb.collection("devices").doc(deviceId).get();
     if (existing.exists && existing.data()?.userId !== user.uid) {
