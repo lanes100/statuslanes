@@ -88,11 +88,47 @@ export async function applyCachedEvents(
   now: number,
   sourceLabel: string,
 ) {
+  const resolveFallback = () => {
+    const fallbackKeyCandidate =
+      (device.calendarIdleUsePreferred && device.preferredStatusKey) ||
+      (!device.calendarIdleUsePreferred && device.calendarIdleStatusKey)
+        ? device.calendarIdleUsePreferred
+          ? device.preferredStatusKey
+          : device.calendarIdleStatusKey
+        : device.preferredStatusKey || device.calendarIdleStatusKey || null;
+    if (!fallbackKeyCandidate) return null;
+    const fallbackLabel =
+      device.statuses?.find((s) => s.key === fallbackKeyCandidate)?.label ??
+      (fallbackKeyCandidate === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
+    return { key: fallbackKeyCandidate, label: fallbackLabel };
+  };
+
   const cached = (device.calendarCachedEvents ?? []).filter((e) => e.end > now);
   if (cached.length === 0) {
-    if ((device.calendarCachedEvents?.length ?? 0) > 0) {
+    const hadEvents = (device.calendarCachedEvents?.length ?? 0) > 0;
+    if (hadEvents) {
       await deviceRef.update({ calendarCachedEvents: [] });
       device.calendarCachedEvents = [];
+    }
+    const fallback = resolveFallback();
+    if (device.activeEventEndsAt && device.activeEventEndsAt <= now && fallback) {
+      device.activeStatusKey = fallback.key ?? null;
+      device.activeStatusLabel = fallback.label ?? null;
+      device.activeStatusSource = sourceLabel;
+      device.activeEventEndsAt = null;
+      await deviceRef.update({
+        activeStatusKey: fallback.key,
+        activeStatusLabel: fallback.label ?? null,
+        activeStatusSource: sourceLabel,
+        activeEventEndsAt: null,
+        updatedAt: now,
+      });
+      await pushStatusToTrmnl(device, fallback.key, fallback.label ?? "", sourceLabel);
+      return true;
+    }
+    if (device.activeEventEndsAt && device.activeEventEndsAt <= now) {
+      device.activeEventEndsAt = null;
+      await deviceRef.update({ activeEventEndsAt: null });
     }
     return false;
   }
@@ -107,35 +143,26 @@ export async function applyCachedEvents(
   if (!chosen) {
     await deviceRef.update({ calendarCachedEvents: cached });
     device.calendarCachedEvents = cached;
-    const fallbackKey =
-      (device.calendarIdleUsePreferred && device.preferredStatusKey) ||
-      (!device.calendarIdleUsePreferred && device.calendarIdleStatusKey)
-        ? device.calendarIdleUsePreferred
-          ? device.preferredStatusKey
-          : device.calendarIdleStatusKey
-        : device.preferredStatusKey || device.calendarIdleStatusKey || null;
-    if (fallbackKey) {
-      const fallbackLabel =
-        device.statuses?.find((s) => s.key === fallbackKey)?.label ??
-        (fallbackKey === device.preferredStatusKey ? device.preferredStatusLabel ?? null : null);
+    const fallback = resolveFallback();
+    if (fallback) {
       const needsUpdate =
-        device.activeStatusKey !== fallbackKey ||
-        device.activeStatusLabel !== fallbackLabel ||
+        device.activeStatusKey !== fallback.key ||
+        device.activeStatusLabel !== fallback.label ||
         device.activeEventEndsAt !== null;
       if (needsUpdate) {
-        device.activeStatusKey = fallbackKey ?? null;
-        device.activeStatusLabel = fallbackLabel ?? null;
+        device.activeStatusKey = fallback.key ?? null;
+        device.activeStatusLabel = fallback.label ?? null;
         device.activeStatusSource = sourceLabel;
         device.activeEventEndsAt = null;
         await deviceRef.update({
-          activeStatusKey: fallbackKey,
-          activeStatusLabel: fallbackLabel ?? null,
+          activeStatusKey: fallback.key,
+          activeStatusLabel: fallback.label ?? null,
           activeStatusSource: sourceLabel,
           activeEventEndsAt: null,
           updatedAt: now,
           calendarCachedEvents: cached,
         });
-        await pushStatusToTrmnl(device, fallbackKey, fallbackLabel ?? "", sourceLabel);
+        await pushStatusToTrmnl(device, fallback.key, fallback.label ?? "", sourceLabel);
         return true;
       }
     } else if (device.activeEventEndsAt && device.activeEventEndsAt <= now) {
