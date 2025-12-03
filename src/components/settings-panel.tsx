@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import { ToastShelf, useToast } from "@/components/toast";
@@ -47,7 +48,7 @@ const detectDeviceTimeFormat = (): "24h" | "12h" => {
 export default function SettingsPanel() {
   const [device, setDevice] = useState<DeviceSettings | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [googleConnected, setGoogleConnected] = useState<boolean | null>(null);
   const [outlookConnected, setOutlookConnected] = useState<boolean | null>(null);
@@ -173,6 +174,7 @@ export default function SettingsPanel() {
       }
     };
     fetchOutlookStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addToast]);
 
   // Auto-save settings on change (with debounce)
@@ -451,7 +453,7 @@ export default function SettingsPanel() {
               }
             >
               <span className="flex items-center gap-2">
-                <img src="/Google__G__logo.svg" alt="Google" className="h-4 w-4" />
+                <Image src="/Google__G__logo.svg" alt="Google" width={16} height={16} className="h-4 w-4" />
                 <span>{googleConnected ? "Disconnect Google" : "Connect Google Calendar"}</span>
               </span>
             </button>
@@ -485,7 +487,7 @@ export default function SettingsPanel() {
               }
             >
               <span className="flex items-center gap-2">
-                <img src="/Microsoft_logo.svg" alt="Microsoft" className="h-4 w-4" />
+                <Image src="/Microsoft_logo.svg" alt="Microsoft" width={16} height={16} className="h-4 w-4" />
                 <span>{outlookConnected ? "Disconnect Outlook" : "Connect Outlook Calendar"}</span>
               </span>
             </button>

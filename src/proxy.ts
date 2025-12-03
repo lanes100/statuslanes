@@ -14,7 +14,7 @@ const PUBLIC_PATHS = [
   "/icon-512.png",
 ];
 
-export function middleware(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isPublic =

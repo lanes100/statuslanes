@@ -82,7 +82,7 @@ export async function POST(request: Request) {
       if (calendarIds.length === 0) continue;
 
       // Apply cached events (same-day) before new fetch
-      const cachedChanged = await applyCachedEvents(device, deviceRef, now);
+      await applyCachedEvents(device, deviceRef, now);
 
       // Prepare auth
       const oauth2Client = getOAuthClient();

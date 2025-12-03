@@ -108,7 +108,7 @@ export async function runOutlookSyncForUser(
 
   const current = cacheableEvents.find((ev) => now >= ev.start && now <= ev.end);
   let chosenKey = current?.statusKey ?? null;
-  let chosenEndsAt = current?.end ?? null;
+  const chosenEndsAt = current?.end ?? null;
 
   if (!chosenKey) {
     if (device.calendarIdleUsePreferred && device.preferredStatusKey) {

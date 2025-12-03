@@ -1,7 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 type Props = {
   variant?: "menu" | "icon";
@@ -21,7 +21,7 @@ export default function ThemeToggle({ variant = "menu" }: Props) {
 
   const current = resolvedTheme === "light" ? "light" : "dark";
   const nextTheme = current === "dark" ? "light" : "dark";
-  const nextLabel = useMemo(() => (nextTheme === "dark" ? "Dark mode" : "Light mode"), [nextTheme]);
+  const nextLabel = nextTheme === "dark" ? "Dark mode" : "Light mode";
 
   const handleToggle = () => {
     setTheme(nextTheme);
