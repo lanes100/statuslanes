@@ -377,7 +377,7 @@ function buildSameDayCache(events: { start: number; end: number; statusKey: numb
   const startOfDay = new Date(now).setHours(0, 0, 0, 0);
   const endOfDay = new Date(now).setHours(23, 59, 59, 999);
   return events
-    .filter((e) => e.start >= startOfDay && e.start <= endOfDay && e.end >= now)
+    .filter((e) => e.end >= startOfDay && e.start <= endOfDay && e.end >= now)
     .sort((a, b) => a.start - b.start)
     .slice(0, 10);
 }
@@ -392,8 +392,9 @@ async function applyCachedEvents(device: DeviceRecord, deviceRef: FirebaseFirest
   let chosen: CachedEvent | null = null;
   for (const ev of cached) {
     if (now >= ev.start && now <= ev.end) {
-      chosen = ev;
-      break;
+      if (!chosen || ev.end > chosen.end) {
+        chosen = ev;
+      }
     }
   }
   if (!chosen) {

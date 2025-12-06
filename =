@@ -1,0 +1,28 @@
+src/app/api/google-calendar/sync-self/route.ts:43:type CachedEvent = { start: number; end: number; statusKey: number | null };
+src/app/api/google-calendar/sync-self/route.ts:115:        orderBy: "startTime",
+src/app/api/google-calendar/sync-self/route.ts:124:      const start = ev.start?.dateTime ?? ev.start?.date;
+src/app/api/google-calendar/sync-self/route.ts:126:      if (!start || !end) return false;
+src/app/api/google-calendar/sync-self/route.ts:127:      const startTs = new Date(start).getTime();
+src/app/api/google-calendar/sync-self/route.ts:129:      return endTs > now - 5 * 60 * 1000 && startTs < now + 5 * 60 * 1000;
+src/app/api/google-calendar/sync-self/route.ts:145:        const startRaw = ev.start?.dateTime ?? ev.start?.date ?? null;
+src/app/api/google-calendar/sync-self/route.ts:147:        const startTs = startRaw ? new Date(startRaw).getTime() : null;
+src/app/api/google-calendar/sync-self/route.ts:149:        return { ev, startTs, endTs };
+src/app/api/google-calendar/sync-self/route.ts:151:      .filter((e) => e.startTs !== null && e.endTs !== null);
+src/app/api/google-calendar/sync-self/route.ts:156:      const isAllDay = Boolean(ev.start?.date);
+src/app/api/google-calendar/sync-self/route.ts:185:      for (const { ev, startTs, endTs } of eventsWithTimes) {
+src/app/api/google-calendar/sync-self/route.ts:186:        if (startTs === null || endTs === null) continue;
+src/app/api/google-calendar/sync-self/route.ts:187:        if (startTs > extendedEnd + grace) continue;
+src/app/api/google-calendar/sync-self/route.ts:190:        const isAllDay = Boolean(ev.start?.date);
+src/app/api/google-calendar/sync-self/route.ts:245:    const nextUpcoming = cacheForToday.find((ev) => ev.start > now);
+src/app/api/google-calendar/sync-self/route.ts:247:      await scheduleCalendarCacheApply(device.deviceId, nextUpcoming.start);
+src/app/api/google-calendar/sync-self/route.ts:324:function buildSameDayCache(events: { start: number; end: number; statusKey: number | null }[], now: number): CachedEvent[] {
+src/app/api/google-calendar/sync-self/route.ts:325:  const startOfDay = new Date(now).setHours(0, 0, 0, 0);
+src/app/api/google-calendar/sync-self/route.ts:327:    .filter((e) => e.start >= startOfDay && e.end >= now)
+src/app/api/google-calendar/sync-self/route.ts:328:    .sort((a, b) => a.start - b.start)
+src/app/api/google-calendar/sync-self/route.ts:341:  cached.sort((a, b) => a.start - b.start);
+src/app/api/google-calendar/sync-self/route.ts:344:    if (now >= ev.start && now <= ev.end) {
+src/app/api/google-calendar/sync-self/route.ts:413:    const startRaw = ev.start?.dateTime ?? ev.start?.date;
+src/app/api/google-calendar/sync-self/route.ts:415:    if (!startRaw || !endRaw) continue;
+src/app/api/google-calendar/sync-self/route.ts:416:    const startTs = new Date(startRaw).getTime();
+src/app/api/google-calendar/sync-self/route.ts:420:    const isAllDay = Boolean(ev.start?.date);
+src/app/api/google-calendar/sync-self/route.ts:431:    mapped.push({ start: startTs, end: endTs, statusKey: key });
