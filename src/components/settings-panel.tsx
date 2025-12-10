@@ -368,7 +368,6 @@ export default function SettingsPanel() {
     <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Settings</h2>
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">Device: {device.deviceId}</span>
       </div>
 
       <div className="space-y-3 rounded-xl border border-indigo-100 bg-indigo-50/80 p-4 text-sm shadow-sm dark:border-indigo-900/50 dark:bg-indigo-950/40">

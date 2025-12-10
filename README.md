@@ -39,7 +39,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 Trigger StatusLanes from an IFTTT geofence applet:
 
-1. Point the IFTTT Webhooks action to `POST https://<your-domain>/api/ifttt/geofence`.
+1. Point the IFTTT Webhooks action to `POST https://statuslanes.vercel.app/api/ifttt/geofence` (or your custom domain).
 2. Headers: `Content-Type: application/json` and `x-ifttt-secret: <device-ifttt-secret>`.
 3. Body example:
    ```json

@@ -62,7 +62,10 @@ export default function IftttSetupPage() {
             <li>
               Configure the Webhook action:
               <ul className="ml-4 mt-1 list-disc space-y-1 text-xs text-zinc-700 dark:text-zinc-200">
-                <li>URL: <code>https://&lt;your-domain&gt;/api/ifttt/geofence</code></li>
+                <li>
+                  URL: <code>https://statuslanes.vercel.app/api/ifttt/geofence</code>{" "}
+                  <span className="text-zinc-500 dark:text-zinc-400">(or your custom domain)</span>
+                </li>
                 <li>Method: <code>POST</code></li>
                 <li>Content Type: <code>application/json</code></li>
                 <li>
