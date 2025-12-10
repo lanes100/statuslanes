@@ -8,8 +8,8 @@ import { ToastShelf, useToast } from "@/components/toast";
 
 type DeviceSettings = {
   deviceId: string;
-  iftttId?: string;
-  iftttSecret?: string;
+  automationId?: string;
+  automationSecret?: string;
   showLastUpdated?: boolean;
   showStatusSource?: boolean;
   timezone?: string;
@@ -92,8 +92,8 @@ export default function SettingsPanel() {
           device: {
             deviceId: string;
             showLastUpdated?: boolean;
-            iftttId?: string;
-            iftttSecret?: string;
+            automationId?: string;
+            automationSecret?: string;
             showStatusSource?: boolean;
             timezone?: string;
             timeFormat?: string;
@@ -113,8 +113,8 @@ export default function SettingsPanel() {
         }>("/api/device");
         setDevice({
           deviceId: res.device.deviceId,
-          iftttId: (res.device as any).iftttId ?? "",
-          iftttSecret: (res.device as any).iftttSecret ?? "",
+          automationId: (res.device as any).automationId ?? "",
+          automationSecret: (res.device as any).automationSecret ?? "",
           showLastUpdated: res.device.showLastUpdated ?? true,
           showStatusSource: res.device.showStatusSource ?? false,
           timezone: res.device.timezone ?? browserTimezone ?? "",
@@ -381,7 +381,7 @@ export default function SettingsPanel() {
             </p>
           </div>
           <Link
-            href="/ifttt-setup"
+            href="/automation-setup"
             className="rounded-md bg-indigo-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-500 dark:hover:bg-indigo-500"
           >
             How to set it up
@@ -393,15 +393,15 @@ export default function SettingsPanel() {
             <div className="flex gap-2">
               <input
                 readOnly
-                value={device.iftttId || "Generating…"}
+                value={device.automationId || "Generating…"}
                 onFocus={(e) => e.target.select()}
                 className="w-full rounded-md border border-indigo-200 bg-white px-3 py-2 text-xs font-mono text-indigo-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-50 dark:focus:ring-indigo-700"
               />
               <button
                 type="button"
-                onClick={() => device.iftttId && copyToClipboard(device.iftttId, "Automation ID")}
+                onClick={() => device.automationId && copyToClipboard(device.automationId, "Automation ID")}
                 className="whitespace-nowrap rounded-md bg-indigo-600 px-2.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={!device.iftttId}
+                disabled={!device.automationId}
               >
                 Copy
               </button>
@@ -412,15 +412,15 @@ export default function SettingsPanel() {
             <div className="flex gap-2">
               <input
                 readOnly
-                value={device.iftttSecret || "Generating…"}
+                value={device.automationSecret || "Generating…"}
                 onFocus={(e) => e.target.select()}
                 className="w-full rounded-md border border-indigo-200 bg-white px-3 py-2 text-xs font-mono text-indigo-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-50 dark:focus:ring-indigo-700"
               />
               <button
                 type="button"
-                onClick={() => device.iftttSecret && copyToClipboard(device.iftttSecret, "Automation secret")}
+                onClick={() => device.automationSecret && copyToClipboard(device.automationSecret, "Automation secret")}
                 className="whitespace-nowrap rounded-md bg-indigo-600 px-2.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={!device.iftttSecret}
+                disabled={!device.automationSecret}
               >
                 Copy
               </button>
@@ -428,7 +428,8 @@ export default function SettingsPanel() {
           </div>
         </div>
         <p className="text-[11px] text-indigo-900/70 dark:text-indigo-100/70">
-          In your automation tool, set `x-ifttt-secret` to this secret and include `iftttId` in the JSON body.
+          In your automation tool, set <code>x-automation-secret</code> to this secret and include{" "}
+          <code>automationId</code> in the JSON body.
         </p>
       </div>
 

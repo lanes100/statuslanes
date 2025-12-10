@@ -1,9 +1,9 @@
 import { randomBytes } from "crypto";
 
-export function generateIftttId(): string {
+export function generateAutomationId(): string {
   return randomBytes(16).toString("hex");
 }
 
-export function generateIftttSecret(): string {
+export function generateAutomationSecret(): string {
   return randomBytes(32).toString("hex");
 }

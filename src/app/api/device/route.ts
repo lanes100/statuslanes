@@ -34,7 +34,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
-      const enriched = await ensureIftttKeys(data, snapshot.ref);
+      const enriched = await ensureAutomationKeys(data, snapshot.ref);
       return NextResponse.json({ device: enriched }, { status: 200 });
     }
 
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
     }
 
     const doc = querySnap.docs[0];
-    const enriched = await ensureIftttKeys(doc.data(), doc.ref);
+    const enriched = await ensureAutomationKeys(doc.data(), doc.ref);
     return NextResponse.json({ device: enriched }, { status: 200 });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "UNAUTHENTICATED") {
@@ -60,24 +60,24 @@ export async function GET(request: Request) {
   }
 }
 
-async function ensureIftttKeys(
+async function ensureAutomationKeys(
   data: FirebaseFirestore.DocumentData | undefined,
   ref: FirebaseFirestore.DocumentReference,
 ) {
   if (!data) return data;
   let mutated = false;
-  if (!data.iftttId) {
-    const { generateIftttId } = await import("@/lib/ifttt");
-    data.iftttId = generateIftttId();
+  if (!data.automationId) {
+    const { generateAutomationId } = await import("@/lib/automation");
+    data.automationId = data.iftttId ?? generateAutomationId();
     mutated = true;
   }
-  if (!data.iftttSecret) {
-    const { generateIftttSecret } = await import("@/lib/ifttt");
-    data.iftttSecret = generateIftttSecret();
+  if (!data.automationSecret) {
+    const { generateAutomationSecret } = await import("@/lib/automation");
+    data.automationSecret = data.iftttSecret ?? generateAutomationSecret();
     mutated = true;
   }
   if (mutated) {
-    await ref.update({ iftttId: data.iftttId, iftttSecret: data.iftttSecret });
+    await ref.update({ automationId: data.automationId, automationSecret: data.automationSecret });
   }
   return data;
 }

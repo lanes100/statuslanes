@@ -37,19 +37,19 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Automation webhook (IFTTT, MacroDroid, Shortcuts)
 
-Trigger StatusLanes from any automation app that can POST a webhook (e.g., IFTTT geofence, MacroDroid, Shortcuts):
+Trigger StatusLanes from any automation app that can POST a webhook (e.g., geofence in IFTTT/MacroDroid/Shortcuts):
 
-1. Point your webhook action to `POST https://statuslanes.vercel.app/api/ifttt/geofence` (or your custom domain).
-2. Headers: `Content-Type: application/json` and `x-ifttt-secret: <device-ifttt-secret>`.
+1. Point your webhook action to `POST https://statuslanes.vercel.app/api/automation/geofence` (or your custom domain).
+2. Headers: `Content-Type: application/json` and `x-automation-secret: <device automation secret>`.
 3. Body example:
    ```json
    {
-     "iftttId": "<your-device-ifttt-id>",
+     "automationId": "<your-device-automation-id>",
      "statusKey": 1,
-     "statusSource": "IFTTT Geofence (Home)"
+     "statusSource": "Automation (Home geofence)"
    }
    ```
-   - `iftttId` is a random per-device token stored on the device document (use this instead of the Firebase deviceId). If a device is missing one, it will be generated on next update.
+   - `automationId` is a random per-device token stored on the device document (use this instead of the Firebase deviceId). If a device is missing one, it will be generated on next update.
    - `statusKey` should match a configured label (1-12) so the webhook can pull the stored label for TRMNL.
-   - `statusSource` is optional and defaults to "IFTTT Geofence". `statusLabel` is optional—only include it if you want to override the stored label for that key.
-4. You can retrieve `iftttId` and `iftttSecret` from the authenticated `GET /api/device` response (or surface them in the UI).
+   - `statusSource` is optional and defaults to "Automation". `statusLabel` is optional—only include it if you want to override the stored label for that key.
+4. You can retrieve `automationId` and `automationSecret` from the authenticated `GET /api/device` response (or surface them in the UI).

@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 
+import { NextResponse } from "next/server";
+
 import { decrypt } from "@/lib/crypto";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { formatTimestamp } from "@/lib/calendarSync";
-import { generateIftttId, generateIftttSecret } from "@/lib/ifttt";
+import { generateAutomationId, generateAutomationSecret } from "@/lib/automation";
 
-const DEFAULT_SOURCE = "IFTTT Geofence";
+const DEFAULT_SOURCE = "Automation";
 
 function extractSecret(request: Request): string | null {
   const headerSecret =
-    request.headers.get("x-ifttt-secret") ??
-    request.headers.get("x-ifttt-key") ??
+    request.headers.get("x-automation-secret") ??
+    request.headers.get("x-automation-key") ??
     request.headers.get("x-sync-secret");
   const bearer = request.headers.get("authorization");
   const bearerToken = bearer?.toLowerCase().startsWith("bearer ")
@@ -28,32 +30,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const iftttId = (body?.iftttId as string | undefined)?.trim();
+  const automationId = (body?.automationId as string | undefined)?.trim();
   const deviceId = (body?.deviceId as string | undefined)?.trim(); // legacy fallback
   const statusLabel = (body?.statusLabel as string | undefined)?.trim();
   const statusKey =
     body?.statusKey === undefined || body?.statusKey === null ? undefined : Number(body.statusKey);
   const statusSource = (body?.statusSource as string | undefined)?.trim() || DEFAULT_SOURCE;
 
-  if (!iftttId && !deviceId) {
-    return NextResponse.json({ error: "Missing iftttId" }, { status: 400 });
+  if (!automationId && !deviceId) {
+    return NextResponse.json({ error: "Missing automationId" }, { status: 400 });
   }
   if (statusKey === undefined) {
     return NextResponse.json({ error: "Missing statusKey" }, { status: 400 });
   }
-  if (
-    statusKey !== undefined &&
-    (!Number.isInteger(statusKey) || statusKey < 1 || statusKey > 12)
-  ) {
+  if (!Number.isInteger(statusKey) || statusKey < 1 || statusKey > 12) {
     return NextResponse.json({ error: "Invalid statusKey" }, { status: 400 });
   }
 
-  const { ref, data } = await resolveDevice(iftttId, deviceId);
+  const { ref, data } = await resolveDevice(automationId, deviceId);
   if (!ref || !data) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   const providedSecret = extractSecret(request);
-  if (!providedSecret || providedSecret !== data.iftttSecret) {
+  if (!providedSecret || providedSecret !== data.automationSecret) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const webhookUrlEncrypted = data?.webhookUrlEncrypted as string | undefined;
@@ -111,7 +110,7 @@ export async function POST(request: Request) {
       );
     }
   } catch (error) {
-    console.error("ifttt/geofence webhook error", error);
+    console.error("automation/geofence webhook error", error);
     return NextResponse.json({ error: "Failed to push status to TRMNL" }, { status: 500 });
   }
 
@@ -122,7 +121,7 @@ export async function POST(request: Request) {
       activeStatusLabel: resolvedLabel,
       statusSource,
       updatedAt,
-      iftttId: data.iftttId,
+      automationId: data.automationId,
     },
     { status: 200 },
   );
@@ -160,16 +159,16 @@ async function sendWebhookWithRetry(url: string, body: Record<string, unknown>) 
   throw lastError ?? new Error("Webhook failed");
 }
 
-async function resolveDevice(iftttId?: string | null, deviceId?: string | null) {
-  if (iftttId) {
-    const snapshot = await adminDb.collection("devices").where("iftttId", "==", iftttId).limit(1).get();
+async function resolveDevice(automationId?: string | null, deviceId?: string | null) {
+  if (automationId) {
+    const snapshot = await adminDb.collection("devices").where("automationId", "==", automationId).limit(1).get();
     const doc = snapshot.docs[0];
     if (doc) {
       const data = doc.data();
-      if (!data.iftttSecret) {
-        const secret = generateIftttSecret();
-        await doc.ref.update({ iftttSecret: secret });
-        data.iftttSecret = secret;
+      if (!data.automationSecret) {
+        const secret = generateAutomationSecret();
+        await doc.ref.update({ automationSecret: secret });
+        data.automationSecret = secret;
       }
       return { ref: doc.ref, data };
     }
@@ -182,16 +181,19 @@ async function resolveDevice(iftttId?: string | null, deviceId?: string | null) 
     const data = snap.data() ?? null;
     if (data) {
       let didUpdate = false;
-      if (!data.iftttId) {
-        data.iftttId = generateIftttId();
+      if (!data.automationId) {
+        data.automationId = data.iftttId ?? generateAutomationId();
         didUpdate = true;
       }
-      if (!data.iftttSecret) {
-        data.iftttSecret = generateIftttSecret();
+      if (!data.automationSecret) {
+        data.automationSecret = data.iftttSecret ?? generateAutomationSecret();
         didUpdate = true;
       }
       if (didUpdate) {
-        await ref.update({ iftttId: data.iftttId, iftttSecret: data.iftttSecret });
+        await ref.update({
+          automationId: data.automationId,
+          automationSecret: data.automationSecret,
+        });
       }
     }
     return { ref, data };

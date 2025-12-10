@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export default function IftttSetupPage() {
+export default function AutomationSetupPage() {
   return (
     <div className="min-h-screen bg-zinc-50 px-4 py-10 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
@@ -64,19 +64,19 @@ export default function IftttSetupPage() {
               <ul className="ml-4 mt-1 list-disc space-y-1 text-xs text-zinc-700 dark:text-zinc-200">
                 <li className="flex flex-wrap gap-1">
                   <span>URL:</span>
-                  <code className="break-all">https://statuslanes.vercel.app/api/ifttt/geofence</code>
+                  <code className="break-all">https://statuslanes.vercel.app/api/automation/geofence</code>
                   <span className="text-zinc-500 dark:text-zinc-400">(or your custom domain)</span>
                 </li>
                 <li>Method: <code>POST</code></li>
                 <li>Content Type: <code>application/json</code></li>
                 <li>
-                  Header: <code>x-ifttt-secret: &lt;your automation secret&gt;</code> (or use Bearer token with the same value)
+                  Header: <code>x-automation-secret: &lt;your automation secret&gt;</code> (or Bearer token with the same value)
                 </li>
                 <li>Body (JSON):</li>
               </ul>
               <pre className="mt-2 overflow-x-auto rounded-lg bg-zinc-100 p-3 text-xs text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">
 {`{
-  "iftttId": "<your Automation ID>",
+  "automationId": "<your Automation ID>",
   "statusKey": 1,
   "statusSource": "Automation (Home geofence)"
 }`}

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
 import { cookies } from "next/headers";
 import { encrypt } from "@/lib/crypto";
-import { generateIftttId, generateIftttSecret } from "@/lib/ifttt";
+import { generateAutomationId, generateAutomationSecret } from "@/lib/automation";
 
 const SESSION_COOKIE_NAME = "statuslanes_session";
 
@@ -103,8 +103,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Device ID already used" }, { status: 409 });
     }
     const existingData = existing.data();
-    const iftttId = existingData?.iftttId ?? generateIftttId();
-    const iftttSecret = existingData?.iftttSecret ?? generateIftttSecret();
+    const automationId = existingData?.automationId ?? generateAutomationId();
+    const automationSecret = existingData?.automationSecret ?? generateAutomationSecret();
 
     let encryptedWebhook: string;
     try {
@@ -123,8 +123,8 @@ export async function POST(request: Request) {
         deviceName,
         pluginId: pluginId ?? extractPluginId(resolvedWebhookUrl),
         webhookUrlEncrypted: encryptedWebhook,
-        iftttId,
-        iftttSecret,
+        automationId,
+        automationSecret,
         statuses: defaultStatuses,
         showLastUpdated: true,
         showStatusSource: false,
