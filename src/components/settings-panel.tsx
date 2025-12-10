@@ -1,12 +1,15 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import { ToastShelf, useToast } from "@/components/toast";
 
 type DeviceSettings = {
   deviceId: string;
+  iftttId?: string;
+  iftttSecret?: string;
   showLastUpdated?: boolean;
   showStatusSource?: boolean;
   timezone?: string;
@@ -89,6 +92,8 @@ export default function SettingsPanel() {
           device: {
             deviceId: string;
             showLastUpdated?: boolean;
+            iftttId?: string;
+            iftttSecret?: string;
             showStatusSource?: boolean;
             timezone?: string;
             timeFormat?: string;
@@ -108,6 +113,8 @@ export default function SettingsPanel() {
         }>("/api/device");
         setDevice({
           deviceId: res.device.deviceId,
+          iftttId: (res.device as any).iftttId ?? "",
+          iftttSecret: (res.device as any).iftttSecret ?? "",
           showLastUpdated: res.device.showLastUpdated ?? true,
           showStatusSource: res.device.showStatusSource ?? false,
           timezone: res.device.timezone ?? browserTimezone ?? "",
@@ -352,6 +359,46 @@ export default function SettingsPanel() {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Settings</h2>
         <span className="text-xs text-zinc-500 dark:text-zinc-400">Device: {device.deviceId}</span>
+      </div>
+
+      <div className="space-y-3 rounded-xl border border-indigo-100 bg-indigo-50/80 p-4 text-sm shadow-sm dark:border-indigo-900/50 dark:bg-indigo-950/40">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-semibold text-indigo-900 dark:text-indigo-100">IFTTT geofence webhook</h3>
+            <p className="text-xs text-indigo-900/80 dark:text-indigo-100/80">
+              Use these keys in your IFTTT Webhooks action to update your status when a geofence triggers.
+            </p>
+          </div>
+          <Link
+            href="/ifttt-setup"
+            className="rounded-md bg-indigo-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-500 dark:hover:bg-indigo-500"
+          >
+            How to set it up
+          </Link>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-indigo-900 dark:text-indigo-100">IFTTT ID</label>
+            <input
+              readOnly
+              value={device.iftttId || "Generating…"}
+              onFocus={(e) => e.target.select()}
+              className="w-full rounded-md border border-indigo-200 bg-white px-3 py-2 text-xs font-mono text-indigo-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-50 dark:focus:ring-indigo-700"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-indigo-900 dark:text-indigo-100">IFTTT secret</label>
+            <input
+              readOnly
+              value={device.iftttSecret || "Generating…"}
+              onFocus={(e) => e.target.select()}
+              className="w-full rounded-md border border-indigo-200 bg-white px-3 py-2 text-xs font-mono text-indigo-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-50 dark:focus:ring-indigo-700"
+            />
+          </div>
+        </div>
+        <p className="text-[11px] text-indigo-900/70 dark:text-indigo-100/70">
+          In IFTTT, set `x-ifttt-secret` to this secret and include `iftttId` in the JSON body.
+        </p>
       </div>
 
       <div className="space-y-3">
