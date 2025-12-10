@@ -24,6 +24,18 @@ export default function IftttSetupPage() {
             from the Settings page.
           </p>
 
+          <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-900 shadow-sm dark:border-indigo-900/60 dark:bg-indigo-900/40 dark:text-indigo-50">
+            <p className="font-semibold">Keys you&apos;ll copy from Settings</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <div className="rounded-md bg-white px-3 py-2 text-xs font-mono text-indigo-900 shadow-sm ring-1 ring-indigo-100 dark:bg-indigo-950/60 dark:text-indigo-50 dark:ring-indigo-800/80">
+                IFTTT ID (from Settings)
+              </div>
+              <div className="rounded-md bg-white px-3 py-2 text-xs font-mono text-indigo-900 shadow-sm ring-1 ring-indigo-100 dark:bg-indigo-950/60 dark:text-indigo-50 dark:ring-indigo-800/80">
+                IFTTT secret (from Settings)
+              </div>
+            </div>
+          </div>
+
           <ol className="list-decimal space-y-3 pl-5 text-sm text-zinc-800 dark:text-zinc-100">
             <li>
               In StatusLanes Settings, copy your <code className="rounded bg-zinc-100 px-1 py-0.5 text-xs">IFTTT ID</code>{" "}

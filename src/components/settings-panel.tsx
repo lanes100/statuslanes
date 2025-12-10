@@ -354,6 +354,16 @@ export default function SettingsPanel() {
   }
   if (!device) return null;
 
+  const copyToClipboard = async (value: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      addToast({ message: `${label} copied`, type: "success" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to copy";
+      addToast({ message, type: "error" });
+    }
+  };
+
   return (
     <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
       <div className="flex items-center justify-between">
@@ -379,21 +389,41 @@ export default function SettingsPanel() {
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
             <label className="text-xs font-semibold text-indigo-900 dark:text-indigo-100">IFTTT ID</label>
-            <input
-              readOnly
-              value={device.iftttId || "Generating…"}
-              onFocus={(e) => e.target.select()}
-              className="w-full rounded-md border border-indigo-200 bg-white px-3 py-2 text-xs font-mono text-indigo-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-50 dark:focus:ring-indigo-700"
-            />
+            <div className="flex gap-2">
+              <input
+                readOnly
+                value={device.iftttId || "Generating…"}
+                onFocus={(e) => e.target.select()}
+                className="w-full rounded-md border border-indigo-200 bg-white px-3 py-2 text-xs font-mono text-indigo-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-50 dark:focus:ring-indigo-700"
+              />
+              <button
+                type="button"
+                onClick={() => device.iftttId && copyToClipboard(device.iftttId, "IFTTT ID")}
+                className="whitespace-nowrap rounded-md bg-indigo-600 px-2.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={!device.iftttId}
+              >
+                Copy
+              </button>
+            </div>
           </div>
           <div className="space-y-1">
             <label className="text-xs font-semibold text-indigo-900 dark:text-indigo-100">IFTTT secret</label>
-            <input
-              readOnly
-              value={device.iftttSecret || "Generating…"}
-              onFocus={(e) => e.target.select()}
-              className="w-full rounded-md border border-indigo-200 bg-white px-3 py-2 text-xs font-mono text-indigo-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-50 dark:focus:ring-indigo-700"
-            />
+            <div className="flex gap-2">
+              <input
+                readOnly
+                value={device.iftttSecret || "Generating…"}
+                onFocus={(e) => e.target.select()}
+                className="w-full rounded-md border border-indigo-200 bg-white px-3 py-2 text-xs font-mono text-indigo-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-50 dark:focus:ring-indigo-700"
+              />
+              <button
+                type="button"
+                onClick={() => device.iftttSecret && copyToClipboard(device.iftttSecret, "IFTTT secret")}
+                className="whitespace-nowrap rounded-md bg-indigo-600 px-2.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={!device.iftttSecret}
+              >
+                Copy
+              </button>
+            </div>
           </div>
         </div>
         <p className="text-[11px] text-indigo-900/70 dark:text-indigo-100/70">

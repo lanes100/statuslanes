@@ -34,7 +34,8 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
-      return NextResponse.json({ device: data }, { status: 200 });
+      const enriched = await ensureIftttKeys(data, snapshot.ref);
+      return NextResponse.json({ device: enriched }, { status: 200 });
     }
 
     const querySnap = await adminDb
@@ -48,7 +49,8 @@ export async function GET(request: Request) {
     }
 
     const doc = querySnap.docs[0];
-    return NextResponse.json({ device: doc.data() }, { status: 200 });
+    const enriched = await ensureIftttKeys(doc.data(), doc.ref);
+    return NextResponse.json({ device: enriched }, { status: 200 });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "UNAUTHENTICATED") {
       return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
@@ -56,6 +58,28 @@ export async function GET(request: Request) {
     console.error("device get error", error);
     return NextResponse.json({ error: "Failed to fetch device" }, { status: 500 });
   }
+}
+
+async function ensureIftttKeys(
+  data: FirebaseFirestore.DocumentData | undefined,
+  ref: FirebaseFirestore.DocumentReference,
+) {
+  if (!data) return data;
+  let mutated = false;
+  if (!data.iftttId) {
+    const { generateIftttId } = await import("@/lib/ifttt");
+    data.iftttId = generateIftttId();
+    mutated = true;
+  }
+  if (!data.iftttSecret) {
+    const { generateIftttSecret } = await import("@/lib/ifttt");
+    data.iftttSecret = generateIftttSecret();
+    mutated = true;
+  }
+  if (mutated) {
+    await ref.update({ iftttId: data.iftttId, iftttSecret: data.iftttSecret });
+  }
+  return data;
 }
 
 type StatusInput = { key: number; label: string; enabled: boolean };
