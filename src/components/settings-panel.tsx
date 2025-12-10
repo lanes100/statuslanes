@@ -373,9 +373,11 @@ export default function SettingsPanel() {
       <div className="space-y-3 rounded-xl border border-indigo-100 bg-indigo-50/80 p-4 text-sm shadow-sm dark:border-indigo-900/50 dark:bg-indigo-950/40">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h3 className="text-sm font-semibold text-indigo-900 dark:text-indigo-100">IFTTT geofence webhook</h3>
+            <h3 className="text-sm font-semibold text-indigo-900 dark:text-indigo-100">
+              Automation webhook (IFTTT, MacroDroid, Shortcuts)
+            </h3>
             <p className="text-xs text-indigo-900/80 dark:text-indigo-100/80">
-              Use these keys in your IFTTT Webhooks action to update your status when a geofence triggers.
+              Use these keys in a webhook action to update your status when a geofence or rule triggers.
             </p>
           </div>
           <Link
@@ -387,7 +389,7 @@ export default function SettingsPanel() {
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-indigo-900 dark:text-indigo-100">IFTTT ID</label>
+            <label className="text-xs font-semibold text-indigo-900 dark:text-indigo-100">Automation ID</label>
             <div className="flex gap-2">
               <input
                 readOnly
@@ -397,7 +399,7 @@ export default function SettingsPanel() {
               />
               <button
                 type="button"
-                onClick={() => device.iftttId && copyToClipboard(device.iftttId, "IFTTT ID")}
+                onClick={() => device.iftttId && copyToClipboard(device.iftttId, "Automation ID")}
                 className="whitespace-nowrap rounded-md bg-indigo-600 px-2.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={!device.iftttId}
               >
@@ -406,7 +408,7 @@ export default function SettingsPanel() {
             </div>
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-indigo-900 dark:text-indigo-100">IFTTT secret</label>
+            <label className="text-xs font-semibold text-indigo-900 dark:text-indigo-100">Automation secret</label>
             <div className="flex gap-2">
               <input
                 readOnly
@@ -416,7 +418,7 @@ export default function SettingsPanel() {
               />
               <button
                 type="button"
-                onClick={() => device.iftttSecret && copyToClipboard(device.iftttSecret, "IFTTT secret")}
+                onClick={() => device.iftttSecret && copyToClipboard(device.iftttSecret, "Automation secret")}
                 className="whitespace-nowrap rounded-md bg-indigo-600 px-2.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={!device.iftttSecret}
               >
@@ -426,7 +428,7 @@ export default function SettingsPanel() {
           </div>
         </div>
         <p className="text-[11px] text-indigo-900/70 dark:text-indigo-100/70">
-          In IFTTT, set `x-ifttt-secret` to this secret and include `iftttId` in the JSON body.
+          In your automation tool, set `x-ifttt-secret` to this secret and include `iftttId` in the JSON body.
         </p>
       </div>
 

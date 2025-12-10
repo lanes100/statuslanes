@@ -35,11 +35,11 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-## IFTTT geofence webhook
+## Automation webhook (IFTTT, MacroDroid, Shortcuts)
 
-Trigger StatusLanes from an IFTTT geofence applet:
+Trigger StatusLanes from any automation app that can POST a webhook (e.g., IFTTT geofence, MacroDroid, Shortcuts):
 
-1. Point the IFTTT Webhooks action to `POST https://statuslanes.vercel.app/api/ifttt/geofence` (or your custom domain).
+1. Point your webhook action to `POST https://statuslanes.vercel.app/api/ifttt/geofence` (or your custom domain).
 2. Headers: `Content-Type: application/json` and `x-ifttt-secret: <device-ifttt-secret>`.
 3. Body example:
    ```json

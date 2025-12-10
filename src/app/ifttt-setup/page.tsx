@@ -13,25 +13,25 @@ export default function IftttSetupPage() {
               <span aria-hidden="true">←</span>
               <span>Back to settings</span>
             </Link>
-            <h1 className="text-xl font-semibold">Set up IFTTT geofence</h1>
+            <h1 className="text-xl font-semibold">Set up automation webhook</h1>
           </div>
         </header>
 
         <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
           <p className="text-sm text-zinc-700 dark:text-zinc-200">
-            Use the Webhooks action in IFTTT to trigger StatusLanes when you enter or leave a location. You&apos;ll need
-            the <span className="font-semibold">IFTTT ID</span> and <span className="font-semibold">IFTTT secret</span>{" "}
-            from the Settings page.
+            Use a webhook action in IFTTT, MacroDroid, Shortcuts, or any automation tool to trigger StatusLanes when you
+            enter or leave a location. You&apos;ll need the <span className="font-semibold">Automation ID</span> and{" "}
+            <span className="font-semibold">Automation secret</span> from the Settings page.
           </p>
 
           <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-900 shadow-sm dark:border-indigo-900/60 dark:bg-indigo-900/40 dark:text-indigo-50">
             <p className="font-semibold">Keys you&apos;ll copy from Settings</p>
             <div className="mt-2 grid gap-2 sm:grid-cols-2">
               <div className="rounded-md bg-white px-3 py-2 text-xs font-mono text-indigo-900 shadow-sm ring-1 ring-indigo-100 dark:bg-indigo-950/60 dark:text-indigo-50 dark:ring-indigo-800/80">
-                IFTTT ID (from Settings)
+                Automation ID (from Settings)
               </div>
               <div className="rounded-md bg-white px-3 py-2 text-xs font-mono text-indigo-900 shadow-sm ring-1 ring-indigo-100 dark:bg-indigo-950/60 dark:text-indigo-50 dark:ring-indigo-800/80">
-                IFTTT secret (from Settings)
+                Automation secret (from Settings)
               </div>
             </div>
           </div>
@@ -41,43 +41,44 @@ export default function IftttSetupPage() {
               <span>In StatusLanes Settings, copy your:</span>
               <div className="flex flex-wrap gap-2">
                 <span className="rounded-md bg-indigo-100 px-2 py-1 text-[11px] font-mono text-indigo-900 shadow-sm dark:bg-indigo-900/60 dark:text-indigo-50">
-                  IFTTT ID
+                  Automation ID
                 </span>
                 <span className="rounded-md bg-indigo-100 px-2 py-1 text-[11px] font-mono text-indigo-900 shadow-sm dark:bg-indigo-900/60 dark:text-indigo-50">
-                  IFTTT secret
+                  Automation secret
                 </span>
               </div>
             </li>
             <li>
-              In IFTTT, create an applet:
+              In your automation tool, create a location trigger (e.g., IFTTT applet, MacroDroid geofence, or Shortcuts automation):
               <ul className="ml-4 mt-1 list-disc space-y-1 text-xs text-zinc-700 dark:text-zinc-200">
                 <li>
                   <strong>If This:</strong> Location → &ldquo;You enter/exit an area&rdquo; (define your geofence).
                 </li>
                 <li>
-                  <strong>Then That:</strong> Webhooks → &ldquo;Make a web request&rdquo;.
+                  <strong>Then That:</strong> Webhooks → &ldquo;Make a web request&rdquo; (or equivalent).
                 </li>
               </ul>
             </li>
             <li>
               Configure the Webhook action:
               <ul className="ml-4 mt-1 list-disc space-y-1 text-xs text-zinc-700 dark:text-zinc-200">
-                <li>
-                  URL: <code>https://statuslanes.vercel.app/api/ifttt/geofence</code>{" "}
+                <li className="flex flex-wrap gap-1">
+                  <span>URL:</span>
+                  <code className="break-all">https://statuslanes.vercel.app/api/ifttt/geofence</code>
                   <span className="text-zinc-500 dark:text-zinc-400">(or your custom domain)</span>
                 </li>
                 <li>Method: <code>POST</code></li>
                 <li>Content Type: <code>application/json</code></li>
                 <li>
-                  Header: <code>x-ifttt-secret: &lt;your IFTTT secret&gt;</code> (or use Bearer token with the same value)
+                  Header: <code>x-ifttt-secret: &lt;your automation secret&gt;</code> (or use Bearer token with the same value)
                 </li>
                 <li>Body (JSON):</li>
               </ul>
               <pre className="mt-2 overflow-x-auto rounded-lg bg-zinc-100 p-3 text-xs text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">
 {`{
-  "iftttId": "<your IFTTT ID>",
+  "iftttId": "<your Automation ID>",
   "statusKey": 1,
-  "statusSource": "IFTTT Geofence (Home)"
+  "statusSource": "Automation (Home geofence)"
 }`}
               </pre>
               <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300">
