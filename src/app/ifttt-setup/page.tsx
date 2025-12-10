@@ -37,9 +37,16 @@ export default function IftttSetupPage() {
           </div>
 
           <ol className="list-decimal space-y-3 pl-5 text-sm text-zinc-800 dark:text-zinc-100">
-            <li>
-              In StatusLanes Settings, copy your <code className="rounded bg-zinc-100 px-1 py-0.5 text-xs">IFTTT ID</code>{" "}
-              and <code className="rounded bg-zinc-100 px-1 py-0.5 text-xs">IFTTT secret</code>.
+            <li className="flex flex-col gap-1">
+              <span>In StatusLanes Settings, copy your:</span>
+              <div className="flex flex-wrap gap-2">
+                <span className="rounded-md bg-indigo-100 px-2 py-1 text-[11px] font-mono text-indigo-900 shadow-sm dark:bg-indigo-900/60 dark:text-indigo-50">
+                  IFTTT ID
+                </span>
+                <span className="rounded-md bg-indigo-100 px-2 py-1 text-[11px] font-mono text-indigo-900 shadow-sm dark:bg-indigo-900/60 dark:text-indigo-50">
+                  IFTTT secret
+                </span>
+              </div>
             </li>
             <li>
               In IFTTT, create an applet:
