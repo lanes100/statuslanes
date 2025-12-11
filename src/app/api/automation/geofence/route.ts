@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { NextResponse } from "next/server";
-
 import { decrypt } from "@/lib/crypto";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { formatTimestamp } from "@/lib/calendarSync";
@@ -182,11 +180,11 @@ async function resolveDevice(automationId?: string | null, deviceId?: string | n
     if (data) {
       let didUpdate = false;
       if (!data.automationId) {
-        data.automationId = data.iftttId ?? generateAutomationId();
+        data.automationId = generateAutomationId();
         didUpdate = true;
       }
       if (!data.automationSecret) {
-        data.automationSecret = data.iftttSecret ?? generateAutomationSecret();
+        data.automationSecret = generateAutomationSecret();
         didUpdate = true;
       }
       if (didUpdate) {

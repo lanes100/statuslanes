@@ -68,12 +68,12 @@ async function ensureAutomationKeys(
   let mutated = false;
   if (!data.automationId) {
     const { generateAutomationId } = await import("@/lib/automation");
-    data.automationId = data.iftttId ?? generateAutomationId();
+    data.automationId = generateAutomationId();
     mutated = true;
   }
   if (!data.automationSecret) {
     const { generateAutomationSecret } = await import("@/lib/automation");
-    data.automationSecret = data.iftttSecret ?? generateAutomationSecret();
+    data.automationSecret = generateAutomationSecret();
     mutated = true;
   }
   if (mutated) {
